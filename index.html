@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LuHe / miao~</title>
+    <title>LuHe / 个人主页</title>
 
     <!-- Google Fonts - VT323 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js">
+    </script>
 
     <style>
         :root {
@@ -309,71 +313,6 @@
             background: linear-gradient(90deg, #661a1a 0%, #a03535 60%, #c84040 100%);
         }
 
-        /* ==================== 页面导航提示栏 ==================== */
-        .page-nav-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 22px;
-            padding: 9px 15px;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            transition: all var(--transition-smooth);
-            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.02);
-        }
-        .page-nav-indicator:hover {
-            border-color: rgba(160, 42, 42, 0.55);
-            box-shadow: 0 4px 22px rgba(140, 22, 22, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-            transform: translateY(-1px);
-        }
-        .nav-dash {
-            display: block;
-            height: 2.8px;
-            width: 18px;
-            border-radius: 3px;
-            background: rgba(150, 80, 80, 0.35);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            position: relative;
-        }
-        .nav-dash.active {
-            width: 32px;
-            height: 4px;
-            background: #f5e8e8;
-            box-shadow: 0 0 12px rgba(255, 220, 220, 0.75), 0 0 24px rgba(220, 150, 150, 0.4), 0 0 36px rgba(200, 80, 80, 0.2);
-            border-radius: 4px;
-        }
-        .nav-dash:hover:not(.active) {
-            background: rgba(200, 110, 110, 0.65);
-            width: 23px;
-            box-shadow: 0 0 8px rgba(200, 90, 90, 0.4);
-        }
-        .nav-dash.active:hover {
-            box-shadow: 0 0 18px rgba(255, 225, 225, 0.9), 0 0 32px rgba(220, 150, 150, 0.55), 0 0 48px rgba(200, 80, 80, 0.3);
-            width: 34px;
-        }
-        .nav-dash::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            transform: translate(-50%, -50%);
-            transition: all 0.5s ease;
-            pointer-events: none;
-        }
-        .nav-dash:active::after {
-            width: 44px;
-            height: 44px;
-            opacity: 0;
-            transition: all 0s;
-        }
-
         /* ==================== 左下角欢迎区 ==================== */
         .welcome-area {
             position: fixed;
@@ -473,11 +412,11 @@
             color: rgba(220, 130, 130, 0.6);
         }
 
-        /* ==================== 右下角个人信息卡（向左移动） ==================== */
+        /* ==================== 右下角个人信息卡 ==================== */
         .profile-card {
             position: fixed;
             bottom: 115px;
-            right: 80px;  /* 从28px改为80px，向左移动 */
+            right: 80px;
             z-index: 10;
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.12);
@@ -564,12 +503,12 @@
             line-height: 1.3;
         }
 
-        /* ==================== 底部状态栏（左右边距对称） ==================== */
+        /* ==================== 底部状态栏 ==================== */
         .status-bar {
             position: fixed;
             bottom: 16px;
             left: 24px;
-            right: 24px;  /* 与左侧边距完全一致，保持对称 */
+            right: 24px;
             z-index: 10;
             display: flex;
             align-items: center;
@@ -848,6 +787,411 @@
             }
         }
 
+        /* ============================================================
+           Vue 全屏内容区域样式
+           ============================================================ */
+        .vue-overlay-root {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 200;
+            pointer-events: auto;
+            display: flex;
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+        }
+
+        /* Vue Transition 动画 */
+        .vue-overlay-enter-active {
+            transition: all 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .vue-overlay-leave-active {
+            transition: all 0.4s cubic-bezier(0.6, 0, 0.8, 1);
+        }
+        .vue-overlay-enter-from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        .vue-overlay-leave-to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        /* Vue 覆盖层主容器 */
+        .vue-main-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(6, 2, 2, 0.92);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            display: flex;
+            flex-direction: row;
+            z-index: 1;
+        }
+
+        /* 左侧导航栏 */
+        .vue-sidebar {
+            width: 220px;
+            min-width: 220px;
+            height: 100%;
+            background: rgba(18, 6, 6, 0.7);
+            border-right: 1px solid rgba(140, 40, 40, 0.4);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 0;
+            gap: 6px;
+            box-shadow: 2px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+        .vue-sidebar-header {
+            padding: 0 20px 22px 20px;
+            border-bottom: 1px solid rgba(140, 40, 40, 0.3);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .vue-sidebar-title {
+            font-size: 22px;
+            letter-spacing: 4px;
+            color: #f0d8d8;
+            text-shadow: 0 0 12px rgba(200, 60, 60, 0.4);
+        }
+        .vue-sidebar-subtitle {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: rgba(200, 130, 130, 0.5);
+            margin-top: 4px;
+        }
+        .vue-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 22px;
+            margin: 0 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            color: rgba(200, 150, 150, 0.6);
+            font-size: 15px;
+            letter-spacing: 2px;
+            position: relative;
+            outline: none;
+            background: transparent;
+        }
+        .vue-nav-item:hover {
+            background: rgba(100, 25, 25, 0.3);
+            border-color: rgba(180, 50, 50, 0.35);
+            color: #e8c8c8;
+            box-shadow: 0 0 10px rgba(160, 30, 30, 0.2);
+        }
+        .vue-nav-item.active {
+            background: rgba(140, 30, 30, 0.45);
+            border-color: rgba(210, 55, 55, 0.6);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(200, 45, 45, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+        .vue-nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: #e06060;
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(220, 60, 60, 0.6);
+        }
+        .vue-nav-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .vue-nav-item.active .vue-nav-dot {
+            box-shadow: 0 0 10px currentColor;
+            background: #f5c0c0;
+        }
+
+        /* 右侧内容区 */
+        .vue-content-area {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .vue-content-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 28px;
+            border-bottom: 1px solid rgba(140, 40, 40, 0.25);
+            flex-shrink: 0;
+        }
+        .vue-content-title {
+            font-size: 20px;
+            letter-spacing: 3px;
+            color: #f0d8d8;
+            text-shadow: 0 0 8px rgba(200, 60, 60, 0.3);
+        }
+        .vue-close-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(80, 20, 20, 0.5);
+            border: 1.5px solid rgba(180, 50, 50, 0.5);
+            color: #f0c8c8;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            letter-spacing: 0;
+            font-family: 'VT323', monospace;
+        }
+        .vue-close-btn:hover {
+            background: rgba(160, 35, 35, 0.7);
+            border-color: rgba(220, 65, 65, 0.7);
+            box-shadow: 0 0 20px rgba(200, 40, 40, 0.5);
+            color: #fff;
+            transform: scale(1.08);
+        }
+        .vue-close-btn:active {
+            transform: scale(0.9);
+            transition: transform 0.1s ease;
+        }
+        .vue-content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 32px;
+            scroll-behavior: smooth;
+        }
+        .vue-content-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-track {
+            background: rgba(30, 10, 10, 0.4);
+            border-radius: 3px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-thumb {
+            background: rgba(140, 40, 40, 0.5);
+            border-radius: 3px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(180, 50, 50, 0.7);
+        }
+
+        /* 内容面板过渡 */
+        .panel-fade-enter-active,
+        .panel-fade-leave-active {
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .panel-fade-enter-from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        .panel-fade-leave-to {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        /* 内容卡片样式 */
+        .vue-card {
+            background: rgba(25, 8, 8, 0.5);
+            border: 1px solid rgba(140, 35, 35, 0.3);
+            border-radius: 12px;
+            padding: 22px 26px;
+            margin-bottom: 18px;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.3);
+        }
+        .vue-card:hover {
+            border-color: rgba(180, 50, 50, 0.55);
+            box-shadow: 0 4px 24px rgba(140, 25, 25, 0.35);
+            background: rgba(30, 10, 10, 0.6);
+            transform: translateY(-2px);
+        }
+        .vue-card-title {
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: #f0d8d8;
+            margin-bottom: 8px;
+        }
+        .vue-card-desc {
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            color: rgba(200, 150, 150, 0.7);
+            line-height: 1.6;
+        }
+        .vue-tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .vue-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 14px;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            background: rgba(100, 25, 25, 0.4);
+            border: 1px solid rgba(180, 50, 50, 0.35);
+            color: #e8c0c0;
+            transition: all 0.3s ease;
+        }
+        .vue-tag:hover {
+            background: rgba(150, 35, 35, 0.5);
+            border-color: rgba(210, 60, 60, 0.55);
+            box-shadow: 0 0 8px rgba(180, 35, 35, 0.3);
+            color: #fff;
+        }
+        .vue-highlight-num {
+            font-size: 40px;
+            letter-spacing: 2px;
+            color: #f5e0e0;
+            text-shadow: 0 0 16px rgba(220, 60, 60, 0.5);
+            line-height: 1;
+        }
+        .vue-link {
+            color: #e08080;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            letter-spacing: 1.5px;
+        }
+        .vue-link:hover {
+            color: #f5c0c0;
+            text-shadow: 0 0 10px rgba(220, 80, 80, 0.5);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 20px;
+            border-left: 2px solid rgba(180, 50, 50, 0.4);
+            margin-bottom: 16px;
+        }
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #c84040;
+            box-shadow: 0 0 8px rgba(200, 60, 60, 0.6);
+        }
+        .timeline-time {
+            font-size: 12px;
+            color: var(--text-dim);
+            letter-spacing: 1.5px;
+            margin-bottom: 4px;
+        }
+        .timeline-title {
+            font-size: 15px;
+            color: #f0d8d8;
+            letter-spacing: 1.5px;
+            margin-bottom: 4px;
+        }
+        .timeline-desc {
+            font-size: 12px;
+            color: rgba(200, 150, 150, 0.7);
+            line-height: 1.5;
+            letter-spacing: 1px;
+        }
+
+        /* 简历页面专属样式 */
+        .resume-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .resume-name-block h2 {
+            font-size: 32px;
+            letter-spacing: 4px;
+            color: #f5e0e0;
+            margin-bottom: 6px;
+            text-shadow: 0 0 14px rgba(220, 70, 70, 0.5);
+        }
+        .resume-name-block p {
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: rgba(200, 130, 130, 0.7);
+        }
+        .resume-contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 20px;
+            font-size: 13px;
+            color: rgba(200, 150, 150, 0.75);
+            letter-spacing: 1px;
+        }
+        .resume-contact-grid span strong {
+            color: #f0d0d0;
+            font-weight: normal;
+            margin-right: 6px;
+            letter-spacing: 1.5px;
+        }
+        .resume-section-title {
+            font-size: 17px;
+            letter-spacing: 3px;
+            color: #f0d8d8;
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 3px solid #c84040;
+            text-shadow: 0 0 8px rgba(200, 60, 60, 0.4);
+        }
+        .resume-skill-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 12px;
+        }
+        .resume-skill-name {
+            width: 110px;
+            flex-shrink: 0;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            color: #e8c8c8;
+        }
+        .resume-skill-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(80, 25, 25, 0.4);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .resume-skill-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #882222, #c84040, #e06060);
+            border-radius: 3px;
+            box-shadow: 0 0 8px rgba(200, 60, 60, 0.5);
+            transition: width 1s ease;
+        }
+        .resume-skill-level {
+            width: 40px;
+            text-align: right;
+            font-size: 12px;
+            color: rgba(220, 140, 140, 0.8);
+            flex-shrink: 0;
+        }
+
         /* ==================== 响应式 ==================== */
         @media (max-width: 768px) {
             .top-right-panel {
@@ -874,19 +1218,6 @@
             .volume-slider-wrap {
                 max-width: 52px;
             }
-            .page-nav-indicator {
-                padding: 6px 10px;
-                gap: 5px;
-                border-radius: 16px;
-            }
-            .nav-dash {
-                width: 14px;
-                height: 2.2px;
-            }
-            .nav-dash.active {
-                width: 24px;
-                height: 3.2px;
-            }
             .welcome-overlay-inner {
                 gap: 28px;
                 padding: 24px;
@@ -908,7 +1239,7 @@
             }
             .status-bar {
                 left: 12px;
-                right: 12px;  /* 平板端左右对称 */
+                right: 12px;
                 font-size: 8px;
             }
             .logo {
@@ -940,7 +1271,7 @@
             }
             .profile-card {
                 bottom: 95px;
-                right: 40px;  /* 平板端左移 */
+                right: 40px;
                 padding: 22px 24px 20px 24px;
                 min-width: 260px;
                 max-width: 320px;
@@ -966,6 +1297,80 @@
             .profile-info-value {
                 font-size: 14px;
                 letter-spacing: 1.5px;
+            }
+
+            /* Vue 区域响应式 */
+            .vue-main-overlay {
+                flex-direction: column;
+            }
+            .vue-sidebar {
+                width: 100%;
+                min-width: 100%;
+                height: auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 10px 8px;
+                gap: 4px;
+                border-right: none;
+                border-bottom: 1px solid rgba(140, 40, 40, 0.4);
+                justify-content: center;
+                box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+            }
+            .vue-sidebar-header {
+                display: none;
+            }
+            .vue-nav-item {
+                padding: 8px 12px;
+                margin: 2px;
+                font-size: 12px;
+                letter-spacing: 1.5px;
+                border-radius: 6px;
+                gap: 6px;
+            }
+            .vue-nav-item.active::before {
+                display: none;
+            }
+            .vue-nav-dot {
+                width: 4px;
+                height: 4px;
+            }
+            .vue-content-topbar {
+                padding: 12px 16px;
+            }
+            .vue-content-title {
+                font-size: 16px;
+                letter-spacing: 2px;
+            }
+            .vue-close-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 13px;
+            }
+            .vue-content-scroll {
+                padding: 16px;
+            }
+            .vue-card {
+                padding: 14px 16px;
+                margin-bottom: 12px;
+            }
+            .vue-card-title {
+                font-size: 15px;
+            }
+            .vue-card-desc {
+                font-size: 11px;
+            }
+            .vue-highlight-num {
+                font-size: 28px;
+            }
+            .resume-header {
+                flex-direction: column;
+            }
+            .resume-contact-grid {
+                grid-template-columns: 1fr;
+            }
+            .resume-skill-name {
+                width: 80px;
+                font-size: 12px;
             }
         }
         @media (max-width: 480px) {
@@ -995,19 +1400,6 @@
                 width: 12px;
                 height: 12px;
             }
-            .page-nav-indicator {
-                padding: 5px 8px;
-                gap: 4px;
-                border-radius: 14px;
-            }
-            .nav-dash {
-                width: 11px;
-                height: 1.8px;
-            }
-            .nav-dash.active {
-                width: 20px;
-                height: 2.6px;
-            }
             .welcome-enter-btn {
                 padding: 11px 24px;
                 font-size: 18px;
@@ -1016,7 +1408,7 @@
             }
             .profile-card {
                 bottom: 70px;
-                right: 24px;  /* 手机端左移 */
+                right: 24px;
                 padding: 16px 18px 14px 18px;
                 min-width: 200px;
                 max-width: 240px;
@@ -1055,7 +1447,24 @@
             }
             .status-bar {
                 left: 8px;
-                right: 8px;  /* 手机端左右对称 */
+                right: 8px;
+            }
+            .vue-nav-item {
+                padding: 6px 8px;
+                font-size: 10px;
+                letter-spacing: 1px;
+                border-radius: 4px;
+            }
+            .vue-content-scroll {
+                padding: 12px;
+            }
+            .vue-card {
+                padding: 10px 12px;
+                border-radius: 8px;
+            }
+            .resume-skill-name {
+                width: 70px;
+                font-size: 11px;
             }
         }
 
@@ -1076,21 +1485,8 @@
 </head>
 <body>
 
-    <!--
-    ============================================================
-    背景音乐说明：
-    要替换为自己的音乐文件，请修改下面 <audio> 标签的 src 属性。
-    支持格式：.mp3, .wav, .ogg, .m4a
-    示例：<audio id="bgAudio" src="你的音乐文件.mp3" loop preload="auto"></audio>
-    也可以使用网络URL：src="https://example.com/music.mp3"
-    ============================================================
-    -->
-    <audio
-    id="bgAudio"
-    src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="
-    loop
-    preload="auto"
-    ></audio>
+    <!-- 背景音乐 -->
+    <audio id="bgAudio" src="BGM1.mp3" loop preload="auto"></audio>
 
     <!-- 粒子背景画布 -->
     <canvas id="particle-canvas"></canvas>
@@ -1101,18 +1497,18 @@
     <!-- 暗角遮罩 -->
     <div class="vignette"></div>
 
-    <!-- 右侧装饰线（初始隐藏，点击进入主页后淡入） -->
+    <!-- 右侧装饰线 -->
     <div class="side-line overlay-active"></div>
 
-    <!-- 左上角Logo（初始隐藏，点击进入主页后淡入） -->
+    <!-- 左上角Logo -->
     <div class="logo overlay-active">
         <span class="dot"></span>
         <span class="luhe">LuHe</span>
         <span class="slash">/</span>
-        <span class="miaow">miao~</span>
+        <span class="miaow">个人主页</span>
     </div>
 
-    <!-- 右上角面板：音乐控制器 + 页面导航（初始隐藏，点击进入主页后淡入） -->
+    <!-- 右上角面板 -->
     <div class="top-right-panel overlay-active" id="topRightPanel">
         <!-- 音乐控制器 -->
         <div class="music-controller" id="musicController" title="背景音乐控制">
@@ -1120,29 +1516,12 @@
                 <span class="note-icon">♫</span>
             </button>
             <div class="volume-slider-wrap">
-                <input
-                type="range"
-                class="volume-slider"
-                id="volumeSlider"
-                min="0"
-                max="100"
-                value="40"
-                title="音量调节"
-                aria-label="音量调节"
-                />
+                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="40" title="音量调节" aria-label="音量调节" />
             </div>
-        </div>
-
-        <!-- 页面导航提示栏 -->
-        <div class="page-nav-indicator" id="pageNavIndicator" title="页面导航 · 当前第1页 / 共4页">
-            <span class="nav-dash active" data-page="1" title="场景 01 · 当前"></span>
-            <span class="nav-dash" data-page="2" title="场景 02"></span>
-            <span class="nav-dash" data-page="3" title="场景 03"></span>
-            <span class="nav-dash" data-page="4" title="场景 04"></span>
         </div>
     </div>
 
-    <!-- 左下角欢迎区（初始隐藏，点击进入主页后淡入） -->
+    <!-- 左下角欢迎区 -->
     <div class="welcome-area overlay-active" id="welcomeArea">
         <div class="welcome-text">欢迎宾至，鹿禾的主页。</div>
         <button class="enter-btn" id="enterBtn">
@@ -1152,22 +1531,22 @@
         <div class="enter-hint">SLIDE RIGHT TO ENTER</div>
     </div>
 
-    <!-- 右下角个人信息卡（初始隐藏，点击进入主页后淡入，已向左移动） -->
+    <!-- 右下角个人信息卡 -->
     <div class="profile-card overlay-active" id="profileCard">
         <div class="profile-label">PROFILE</div>
         <div class="profile-name">LuHe</div>
-        <div class="profile-desc">在代码与想象之间，训练未来的轮廓。</div>
+        <div class="profile-desc">在代码与想象直接，描绘未来的轮廓。</div>
         <div class="profile-info-row">
             <span class="profile-info-label">LOCATION</span>
             <span class="profile-info-value">Shi Jia Zhuang</span>
         </div>
         <div class="profile-info-row">
-            <span class="profile-info-label">FOCUS</span>
-            <span class="profile-info-value">Web · AI · Visual</span>
+            <span class="profile-info-label">ORIENTATION</span>
+            <span class="profile-info-value">Web · AI · visual</span>
         </div>
     </div>
 
-    <!-- 底部状态栏（初始隐藏，点击进入主页后淡入） -->
+    <!-- 底部状态栏 -->
     <div class="status-bar overlay-active">
         <span>SCENCE 01 主 IDLE LOOP</span>
         <div class="progress-track">
@@ -1175,7 +1554,7 @@
         </div>
     </div>
 
-    <!-- 右下角控制按钮（初始隐藏，点击进入主页后淡入） -->
+    <!-- 右下角控制按钮 -->
     <div class="controls overlay-active">
         <div class="control-btn" title="音效">🎤</div>
         <div class="control-btn" title="设置">⚙</div>
@@ -1184,16 +1563,255 @@
     <!-- 毛玻璃欢迎覆盖层 -->
     <div class="welcome-overlay" id="welcomeOverlay">
         <div class="welcome-overlay-inner">
-            <h1 class="welcome-title">别来无恙啊！</h1>
+            <h1 class="welcome-title">别来无恙啊</h1>
             <button class="welcome-enter-btn" id="enterMainBtn">
                 <span>点击进入主页</span>
             </button>
         </div>
-        <div class="welcome-subtle">WELCOME · 鹿禾</div>
+        <div class="welcome-subtle">WELCOME · 鹿禾的个人主页</div>
     </div>
 
     <!-- 滑动过渡遮罩 -->
     <div class="slide-mask" id="slideMask"></div>
+
+    <!-- Vue 3 全屏内容区域 -->
+    <div id="vue-app">
+        <transition name="vue-overlay">
+            <div v-if="visible" class="vue-overlay-root">
+                <div class="vue-main-overlay">
+                    <!-- 左侧导航栏 -->
+                    <nav class="vue-sidebar">
+                        <div class="vue-sidebar-header">
+                            <div class="vue-sidebar-title">鹿禾·LuHe</div>
+                            <div class="vue-sidebar-subtitle">NAVIGATION</div>
+                        </div>
+                        <div v-for="tab in tabs" :key="tab.id" class="vue-nav-item" :class="{ active: currentTab === tab.id }" @click="goToTab(tab.id)" :title="tab.name">
+                            <span class="vue-nav-dot"></span>
+                            <span>{{ tab.name }}</span>
+                        </div>
+                    </nav>
+
+                    <!-- 右侧内容区 -->
+                    <div class="vue-content-area">
+                        <div class="vue-content-topbar">
+                            <span class="vue-content-title">
+                                SCENCE {{ String(currentTab).padStart(2, '0') }} · {{ currentTabData.name }}
+                            </span>
+                            <button class="vue-close-btn" @click="closeOverlay" title="关闭 · 返回主页">✕</button>
+                        </div>
+                        <div class="vue-content-scroll">
+                            <transition name="panel-fade" mode="out-in">
+                                <!-- 场景01：关于我 -->
+                                <div v-if="currentTab === 1" :key="1">
+                                    <div class="vue-card">
+                                        <div class="vue-card-title">关于我</div>
+                                        <div class="vue-card-desc">
+                                            23届计算机应用技术专业专科毕业生，具备Web全栈开发、AI工具落地、视觉设计与视频剪辑复合能力。
+                                            有企业前端实习经验，擅长从需求到落地的完整交付，注重代码质量与交互体验的平衡，
+                                            始终保持技术学习热情，持续拓展能力边界。
+                                        </div>
+                                        <div class="vue-tag-row">
+                                            <span class="vue-tag">前端开发</span>
+                                            <span class="vue-tag">AI增效</span>
+                                            <span class="vue-tag">视觉设计</span>
+                                            <span class="vue-tag">视频剪辑</span>
+                                            <span class="vue-tag">全栈实践</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="vue-card">
+                                        <div class="vue-card-title">教育背景</div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-time">2020 - 2023</div>
+                                            <div class="timeline-title">计算机应用技术 · 专科</div>
+                                            <div class="timeline-desc">
+                                                系统学习计算机基础、前端开发、Python/C++程序设计、数据库原理等课程，
+                                                在校期间完成多个课程项目，打下扎实的技术基础。
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="vue-card">
+                                        <div class="vue-card-title">实习经历</div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-time">苏州极豹信息科技 · 前端开发实习生</div>
+                                            <div class="timeline-title">负责企业官网与内部管理系统前端开发</div>
+                                            <div class="timeline-desc">
+                                                基于Vue.js完成页面组件开发与迭代，配合后端联调接口，
+                                                参与页面性能优化，首屏加载速度提升约30%，协助完成响应式适配与兼容性修复。
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="vue-card">
+                                        <div class="vue-card-title">个人理念</div>
+                                        <div class="vue-card-desc" style="font-size:16px;color:#f0d8d8;">
+                                            "技术是工具，创意是内核，做能解决实际问题的创造者。"
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 场景02：技能领域 -->
+                                <div v-if="currentTab === 2" :key="2">
+                                    <div class="vue-card" v-for="skillGroup in skillGroups" :key="skillGroup.category">
+                                        <div class="vue-card-title">{{ skillGroup.category }}</div>
+                                        <div class="vue-card-desc">{{ skillGroup.description }}</div>
+                                        <div class="vue-tag-row">
+                                            <span class="vue-tag" v-for="skill in skillGroup.skills" :key="skill">{{ skill }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="vue-card" style="text-align:center;">
+                                        <div class="vue-highlight-num">{{ totalSkillCount }}+</div>
+                                        <div class="vue-card-desc" style="margin-top:4px;">技能标签总数 · 持续学习迭代中</div>
+                                    </div>
+                                </div>
+
+                                <!-- 场景03：联系方式 -->
+                                <div v-if="currentTab === 3" :key="3">
+                                    <div class="vue-card" v-for="contact in contacts" :key="contact.label">
+                                        <div class="vue-card-title">{{ contact.label }}</div>
+                                        <div class="vue-card-desc">
+                                            <a v-if="contact.link" :href="contact.link" target="_blank" class="vue-link">{{ contact.value }}</a>
+                                            <span v-else>{{ contact.value }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="vue-card">
+                                        <div class="vue-card-title">合作说明</div>
+                                        <div class="vue-card-desc">
+                                            欢迎技术交流、项目合作与求职机会沟通，无论是前端开发、AI工具落地、
+                                            视觉设计还是视频剪辑相关的需求，都可以随时联系，我会尽快回复。
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 场景04：个人简历 -->
+                                <div v-if="currentTab === 4" :key="4">
+                                    <!-- 简历头部 -->
+                                    <div class="vue-card">
+                                        <div class="resume-header">
+                                            <div class="resume-name-block">
+                                                <h2>鹿禾 / LuHe</h2>
+                                                <p>Web前端开发 · 全栈实践 · AI增效工程师</p>
+                                            </div>
+                                            <div class="resume-contact-grid">
+                                                <span><strong>所在城市</strong>河北石家庄</span>
+                                                <span><strong>工作性质</strong>全职 / 远程</span>
+                                                <span><strong>电子邮箱</strong>2743591998@qq.com</span>
+                                                <span><strong>GitHub</strong>github.com/LuHeJ/index.git</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 求职意向 -->
+                                    <div class="vue-card">
+                                        <div class="resume-section-title">求职意向</div>
+                                        <div class="vue-card-desc">
+                                            期望岗位：Web前端开发 / 全栈开发 / AI应用开发<br />
+                                            期望城市：石家庄 / 远程 / 可接受短期出差<br />
+                                            到岗时间：随时到岗
+                                        </div>
+                                    </div>
+
+                                    <!-- 教育背景 -->
+                                    <div class="vue-card">
+                                        <div class="resume-section-title">教育背景</div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-time">2020.09 - 2023.06</div>
+                                            <div class="timeline-title">计算机应用技术 · 专科</div>
+                                            <div class="timeline-desc">
+                                                主修课程：Web前端开发、数据结构、数据库原理、Python程序设计、C++程序设计、计算机网络、UI设计基础<br />
+                                                专业排名前15%，多次获得学业奖学金，完成多个课程设计与实战项目。
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 工作经历 -->
+                                    <div class="vue-card">
+                                        <div class="resume-section-title">工作/实习经历</div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-time">2023.03 - 2023.08</div>
+                                            <div class="timeline-title">苏州极豹信息科技有限公司 · 前端开发实习生</div>
+                                            <div class="timeline-desc">
+                                                1. 参与企业官网与内部管理系统的前端开发，基于Vue 3 + Element Plus实现20+业务组件，覆盖数据看板、表单、权限管理等模块；<br />
+                                                2. 配合后端完成接口联调，使用Axios封装统一请求拦截与错误处理，提升接口联调效率约25%；<br />
+                                                3. 负责页面响应式适配与浏览器兼容性优化，覆盖Chrome、Edge、移动端等多端，首屏加载速度提升30%；<br />
+                                                4. 参与代码评审与技术文档编写，协助团队建立前端组件规范。
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 专业技能 -->
+                                    <div class="vue-card">
+                                        <div class="resume-section-title">专业技能</div>
+                                        <div class="resume-skill-row">
+                                            <div class="resume-skill-name">HTML5 / CSS3</div>
+                                            <div class="resume-skill-bar">
+                                                <div class="resume-skill-fill" style="width: 90%;"></div>
+                                            </div>
+                                            <div class="resume-skill-level">熟练</div>
+                                        </div>
+                                        <div class="resume-skill-row">
+                                            <div class="resume-skill-name">JavaScript</div>
+                                            <div class="resume-skill-bar">
+                                                <div class="resume-skill-fill" style="width: 85%;"></div>
+                                            </div>
+                                            <div class="resume-skill-level">熟练</div>
+                                        </div>
+                                        <div class="resume-skill-row">
+                                            <div class="resume-skill-name">Vue 3</div>
+                                            <div class="resume-skill-bar">
+                                                <div class="resume-skill-fill" style="width: 80%;"></div>
+                                            </div>
+                                            <div class="resume-skill-level">熟练</div>
+                                        </div>
+                                        <div class="resume-skill-row">
+                                            <div class="resume-skill-name">Python</div>
+                                            <div class="resume-skill-bar">
+                                                <div class="resume-skill-fill" style="width: 70%;"></div>
+                                            </div>
+                                            <div class="resume-skill-level">掌握</div>
+                                        </div>
+                                        <div class="resume-skill-row">
+                                            <div class="resume-skill-name">微信小程序</div>
+                                            <div class="resume-skill-bar">
+                                                <div class="resume-skill-fill" style="width: 75%;"></div>
+                                            </div>
+                                            <div class="resume-skill-level">掌握</div>
+                                        </div>
+                                        <div class="resume-skill-row">
+                                            <div class="resume-skill-name">AI工具应用</div>
+                                            <div class="resume-skill-bar">
+                                                <div class="resume-skill-fill" style="width: 85%;"></div>
+                                            </div>
+                                            <div class="resume-skill-level">熟练</div>
+                                        </div>
+                                        <div class="resume-skill-row">
+                                            <div class="resume-skill-name">PS / 剪映</div>
+                                            <div class="resume-skill-bar">
+                                                <div class="resume-skill-fill" style="width: 80%;"></div>
+                                            </div>
+                                            <div class="resume-skill-level">熟练</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 自我评价 -->
+                                    <div class="vue-card">
+                                        <div class="resume-section-title">自我评价</div>
+                                        <div class="vue-card-desc">
+                                            1. 具备扎实的Web前端开发基础，有企业实习项目经验，熟悉完整的前端开发流程与协作规范；<br />
+                                            2. 复合能力突出，覆盖编码开发、视觉设计、AI增效、视频剪辑四大板块，可独立完成从需求到交付的全链路工作；<br />
+                                            3. 学习能力强，对新技术保持高度热情，持续关注前端与AI领域的发展趋势，善于将新工具落地到实际工作中提效；<br />
+                                            4. 工作态度认真负责，注重代码质量与用户体验，具备良好的沟通能力与团队协作意识。
+                                        </div>
+                                    </div>
+                                </div>
+                            </transition>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+    </div>
 
     <script>
         // ==================== 粒子连线动画 ====================
@@ -1303,11 +1921,14 @@
         const bgAudio = document.getElementById('bgAudio');
         const musicPlayBtn = document.getElementById('musicPlayBtn');
         const volumeSlider = document.getElementById('volumeSlider');
-        const noteIcon = musicPlayBtn.querySelector('.note-icon');
+        const noteIcon = musicPlayBtn ? musicPlayBtn.querySelector('.note-icon') : null;
 
-        bgAudio.volume = parseInt(volumeSlider.value) / 100;
+        if (bgAudio && volumeSlider) {
+            bgAudio.volume = parseInt(volumeSlider.value) / 100;
+        }
 
         function updateMusicBtnUI() {
+            if (!bgAudio || !musicPlayBtn || !noteIcon) return;
             if (bgAudio.paused) {
                 musicPlayBtn.classList.remove('playing');
                 noteIcon.textContent = '♫';
@@ -1319,69 +1940,59 @@
             }
         }
 
-        musicPlayBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (bgAudio.paused) {
-                bgAudio.play().then(() => {
+        if (musicPlayBtn && bgAudio) {
+            musicPlayBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (bgAudio.paused) {
+                    bgAudio.play().then(() => {
+                        updateMusicBtnUI();
+                    }).catch(err => {
+                        console.warn('音乐播放失败（可能需要用户交互）:', err.message);
+                    });
+                } else {
+                    bgAudio.pause();
                     updateMusicBtnUI();
-                }).catch(err => {
-                    console.warn('音乐播放失败（可能需要用户交互）:', err.message);
-                });
-            } else {
-                bgAudio.pause();
-                updateMusicBtnUI();
-            }
-        });
+                }
+            });
+        }
 
-        volumeSlider.addEventListener('input', () => {
-            bgAudio.volume = parseInt(volumeSlider.value) / 100;
-        });
-        volumeSlider.addEventListener('change', () => {
-            bgAudio.volume = parseInt(volumeSlider.value) / 100;
-        });
+        if (volumeSlider && bgAudio) {
+            volumeSlider.addEventListener('input', () => {
+                bgAudio.volume = parseInt(volumeSlider.value) / 100;
+            });
+            volumeSlider.addEventListener('change', () => {
+                bgAudio.volume = parseInt(volumeSlider.value) / 100;
+            });
+        }
 
-        bgAudio.addEventListener('play', updateMusicBtnUI);
-        bgAudio.addEventListener('pause', updateMusicBtnUI);
-        bgAudio.addEventListener('ended', updateMusicBtnUI);
-        bgAudio.addEventListener('volumechange', () => {
-            const volPercent = Math.round(bgAudio.volume * 100);
-            if (parseInt(volumeSlider.value) !== volPercent) {
-                volumeSlider.value = volPercent;
-            }
-        });
+        if (bgAudio) {
+            bgAudio.addEventListener('play', updateMusicBtnUI);
+            bgAudio.addEventListener('pause', updateMusicBtnUI);
+            bgAudio.addEventListener('ended', updateMusicBtnUI);
+            bgAudio.addEventListener('volumechange', () => {
+                if (!volumeSlider) return;
+                const volPercent = Math.round(bgAudio.volume * 100);
+                if (parseInt(volumeSlider.value) !== volPercent) {
+                    volumeSlider.value = volPercent;
+                }
+            });
+        }
 
         updateMusicBtnUI();
 
-        // ==================== 页面导航 ====================
-        const navDashes = document.querySelectorAll('.nav-dash');
+        // ==================== 当前页面追踪与状态栏更新 ====================
         let currentPage = 1;
-        const totalPages = navDashes.length;
+        const totalPages = 4;
 
-        navDashes.forEach(dash => {
-            dash.addEventListener('click', () => {
-                const pageNum = parseInt(dash.getAttribute('data-page'));
-                if (pageNum === currentPage) return;
-                navDashes.forEach(d => d.classList.remove('active'));
-                dash.classList.add('active');
-                currentPage = pageNum;
-                document.getElementById('pageNavIndicator').title =
-                    `页面导航 · 当前第${currentPage}页 / 共${totalPages}页`;
-                navDashes.forEach(d => {
-                    const p = parseInt(d.getAttribute('data-page'));
-                    d.title = p === currentPage ?
-                        `场景 ${String(p).padStart(2, '0')} · 当前` :
-                        `场景 ${String(p).padStart(2, '0')}`;
-                });
-                const statusSpan = document.querySelector('.status-bar span');
-                if (statusSpan) {
-                    statusSpan.textContent =
-                        `SCENCE ${String(currentPage).padStart(2, '0')} 主 IDLE LOOP`;
-                }
-                console.log(`导航到第 ${currentPage} 页（共 ${totalPages} 页）`);
-            });
-        });
+        function updateStatusBar(pageNum) {
+            currentPage = pageNum;
+            const statusSpan = document.querySelector('.status-bar span');
+            if (statusSpan) {
+                statusSpan.textContent = `SCENCE ${String(currentPage).padStart(2, '0')} 主 IDLE LOOP`;
+            }
+        }
 
-        // ==================== 覆盖层 + 所有UI元素联动 ====================
+        // ==================== 覆盖层 + UI元素联动 ====================
         const welcomeOverlay = document.getElementById('welcomeOverlay');
         const enterMainBtn = document.getElementById('enterMainBtn');
         const topRightPanel = document.getElementById('topRightPanel');
@@ -1392,7 +2003,6 @@
         const sideLineEl = document.querySelector('.side-line');
         const profileCardEl = document.getElementById('profileCard');
 
-        // 所有需要在overlay期间隐藏的UI元素
         const allUiElements = [
             logoEl,
             topRightPanel,
@@ -1401,18 +2011,15 @@
             controlsEl,
             sideLineEl,
             profileCardEl
-        ];
+        ].filter(Boolean);
 
-        // 显示覆盖层（淡入 1s），确保所有UI元素隐藏
         function showWelcomeOverlay() {
             if (
                 welcomeOverlay &&
                 !welcomeOverlay.classList.contains('visible') &&
                 !welcomeOverlay.classList.contains('fading-out')
             ) {
-                // 覆盖层淡入
                 welcomeOverlay.classList.add('visible');
-                // 确保所有UI元素都隐藏
                 allUiElements.forEach(el => {
                     if (el && !el.classList.contains('overlay-active')) {
                         el.classList.add('overlay-active');
@@ -1421,7 +2028,6 @@
             }
         }
 
-        // 页面加载后 1.6s 显示覆盖层
         window.addEventListener('load', () => {
             setTimeout(showWelcomeOverlay, 300);
         });
@@ -1429,35 +2035,29 @@
             setTimeout(showWelcomeOverlay, 300);
         }
 
-        // 点击"点击进入主页" → 覆盖层淡出 1s + 所有UI元素淡入 1s
-        enterMainBtn.addEventListener('click', () => {
-            if (welcomeOverlay.classList.contains('visible')) {
-                // 覆盖层淡出
-                welcomeOverlay.classList.remove('visible');
-                welcomeOverlay.classList.add('fading-out');
-                // 所有UI元素淡入（移除隐藏类）
-                allUiElements.forEach(el => {
-                    if (el) {
-                        el.classList.remove('overlay-active');
+        if (enterMainBtn && welcomeOverlay) {
+            enterMainBtn.addEventListener('click', () => {
+                if (welcomeOverlay.classList.contains('visible')) {
+                    welcomeOverlay.classList.remove('visible');
+                    welcomeOverlay.classList.add('fading-out');
+                    allUiElements.forEach(el => {
+                        if (el) {
+                            el.classList.remove('overlay-active');
+                        }
+                    });
+                    setTimeout(() => {
+                        welcomeOverlay.classList.remove('fading-out');
+                    }, 1000);
+                    if (bgAudio) {
+                        bgAudio.play().then(() => {
+                            updateMusicBtnUI();
+                        }).catch(err => {
+                            console.warn('音乐播放失败:', err.message);
+                        });
                     }
-                });
-
-                // 1s 后移除 fading-out 类
-                setTimeout(() => {
-                    welcomeOverlay.classList.remove('fading-out');
-                }, 1000);
-
-                // 用户交互后播放背景音乐
-                bgAudio.play().then(() => {
-                    updateMusicBtnUI();
-                    console.log('🎵 背景音乐开始播放');
-                }).catch(err => {
-                    console.warn('音乐播放失败:', err.message);
-                });
-
-                console.log('欢迎覆盖层已关闭，所有UI元素已淡入，进入主页。');
-            }
-        });
+                }
+            });
+        }
 
         // ==================== 滑动进入交互 ====================
         const enterBtn = document.getElementById('enterBtn');
@@ -1466,9 +2066,11 @@
         let touchStartX = 0;
         let touchDragging = false;
 
-        enterBtn.addEventListener('click', () => {
-            enterSite();
-        });
+        if (enterBtn) {
+            enterBtn.addEventListener('click', () => {
+                enterSite();
+            });
+        }
         document.addEventListener('touchstart', (e) => {
             touchStartX = e.touches[0].clientX;
             touchDragging = true;
@@ -1497,22 +2099,38 @@
         });
 
         function enterSite() {
-            slideMask.classList.add('active');
-            if (bgAudio.paused) {
+            if (window.vueApp && window.vueApp.visible) return;
+            if (slideMask) slideMask.classList.add('active');
+            if (bgAudio && bgAudio.paused) {
                 bgAudio.play().then(updateMusicBtnUI).catch(() => {});
             }
             setTimeout(() => {
-                console.log('滑动进入主页');
+                if (window.vueApp) {
+                    window.vueApp.show();
+                }
             }, 800);
+        }
+
+        function closeVueOverlay() {
+            if (window.vueApp && window.vueApp.visible) {
+                window.vueApp.hide();
+            }
+            setTimeout(() => {
+                if (slideMask) slideMask.classList.remove('active');
+            }, 450);
         }
 
         // ==================== 键盘快捷键 ====================
         document.addEventListener('keydown', (e) => {
-            // 如果覆盖层正在显示，忽略快捷键（避免在入场动画期间操作）
-            if (welcomeOverlay.classList.contains('visible')) {
-                return;
+            if (welcomeOverlay && welcomeOverlay.classList.contains('visible')) return;
+            if (e.code === 'Escape') {
+                if (window.vueApp && window.vueApp.visible) {
+                    e.preventDefault();
+                    closeVueOverlay();
+                    return;
+                }
             }
-            if (e.code === 'Space' && e.target === document.body) {
+            if (e.code === 'Space' && e.target === document.body && bgAudio) {
                 e.preventDefault();
                 if (bgAudio.paused) {
                     bgAudio.play().then(updateMusicBtnUI).catch(() => {});
@@ -1521,31 +2139,37 @@
                     updateMusicBtnUI();
                 }
             }
-            if (e.code === 'ArrowUp' && e.target === document.body) {
+            if (e.code === 'ArrowUp' && e.target === document.body && volumeSlider && bgAudio) {
                 e.preventDefault();
                 const newVol = Math.min(100, parseInt(volumeSlider.value) + 5);
                 volumeSlider.value = newVol;
                 bgAudio.volume = newVol / 100;
             }
-            if (e.code === 'ArrowDown' && e.target === document.body) {
+            if (e.code === 'ArrowDown' && e.target === document.body && volumeSlider && bgAudio) {
                 e.preventDefault();
                 const newVol = Math.max(0, parseInt(volumeSlider.value) - 5);
                 volumeSlider.value = newVol;
                 bgAudio.volume = newVol / 100;
             }
-            if (e.code === 'ArrowRight' && e.target === document.body && currentPage < totalPages) {
+            if (e.code === 'ArrowRight' && e.target === document.body) {
                 e.preventDefault();
-                const nextDash = document.querySelector(`.nav-dash[data-page="${currentPage + 1}"]`);
-                if (nextDash) nextDash.click();
+                if (window.vueApp && window.vueApp.visible && currentPage < totalPages) {
+                    const newPage = currentPage + 1;
+                    updateStatusBar(newPage);
+                    window.vueApp.goToTab(newPage);
+                }
             }
-            if (e.code === 'ArrowLeft' && e.target === document.body && currentPage > 1) {
+            if (e.code === 'ArrowLeft' && e.target === document.body) {
                 e.preventDefault();
-                const prevDash = document.querySelector(`.nav-dash[data-page="${currentPage - 1}"]`);
-                if (prevDash) prevDash.click();
+                if (window.vueApp && window.vueApp.visible && currentPage > 1) {
+                    const newPage = currentPage - 1;
+                    updateStatusBar(newPage);
+                    window.vueApp.goToTab(newPage);
+                }
             }
         });
 
-        // ==================== 初始化 ====================
+        // ==================== 初始化粒子 ====================
         window.addEventListener('resize', () => {
             resize();
             initParticles();
@@ -1554,17 +2178,99 @@
         initParticles();
         animate();
 
-        console.log('🖤 LuHe / miao~ 主页已就绪');
-        console.log('  初始状态：仅显示背景（粒子/网格/暗角）');
-        console.log('  1.6s 后显示欢迎覆盖层（"别来无恙啊"）');
-        console.log('  点击"进入主页"后：覆盖层淡出，所有UI元素淡入');
-        console.log('  右上角 · 音乐控制器 | 页面导航');
-        console.log('  右下角 · 个人信息卡（PROFILE）- 已向左移动');
-        console.log('  底部状态栏 · 左右边距已对称');
-        console.log('  快捷键：空格=播放/暂停 | ↑↓=音量 | ←→=切换页面');
-        console.log('  覆盖层淡入/淡出 1s · UI元素联动淡入/淡出 1s');
-        console.log('  音乐系统：HTML5 Audio（替换 src 即可使用自己的音乐）');
-        console.log('  英文字体：VT323（等宽像素风格）');
+        // ==================== Vue 3 应用 ====================
+        if (typeof Vue !== 'undefined') {
+            const vueApp = Vue.createApp({
+                data() {
+                    return {
+                        visible: false,
+                        currentTab: 1,
+                        tabs: [
+                            { id: 1, name: '关于我' },
+                            { id: 2, name: '技能领域' },
+                            { id: 3, name: '联系方式' },
+                            { id: 4, name: '个人简历' },
+                        ],
+                        skillGroups: [
+                            {
+                                category: '编码开发',
+                                description: '掌握前后端核心技术栈，可独立完成Web项目从页面到接口的完整开发。',
+                                skills: ['HTML5/CSS3', 'JavaScript', 'Vue 3', 'Python', 'C++', 'Bootstrap',
+                                    '微信小程序', 'MySQL'
+                                ],
+                            },
+                            {
+                                category: '视觉交互',
+                                description: '具备设计审美与界面落地能力，兼顾视觉质感与用户体验。',
+                                skills: ['Photoshop', 'Illustrator', 'UI设计', '响应式布局', '交互动效', '用户体验优化'],
+                            },
+                            {
+                                category: 'AI增效',
+                                description: '熟练运用主流AI工具提升开发与创作效率，可落地自动化工作流。',
+                                skills: ['AI图像生成', 'AI文案优化', '自动化脚本', '批量处理', '提示词工程', 'AI工具二次开发'],
+                            },
+                            {
+                                category: '视频剪辑',
+                                description: '可独立完成产品宣传、项目演示等场景的视频制作。',
+                                skills: ['剪映专业版', '卡点剪辑', '字幕制作', '转场动效', '宣传短片', '演示视频'],
+                            },
+                        ],
+                        contacts: [
+                            { label: '电子邮箱', value: '2743591998@qq.com', link: 'mailto:2743591998@qq.com' },
+                            { label: 'GitHub', value: 'github.com/LuHeJ/index.git', link: 'https://github.com/LuHeJ/index.git' },
+                            { label: '微信', value: 'xiaoyiyanyu', link: null },
+                            { label: '所在城市', value: '中国 · 河北石家庄', link: null },
+                        ],
+                    };
+                },
+                computed: {
+                    currentTabData() {
+                        return this.tabs.find(t => t.id === this.currentTab) || this.tabs[0];
+                    },
+                    totalSkillCount() {
+                        return this.skillGroups.reduce((sum, group) => sum + group.skills.length, 0);
+                    },
+                },
+                methods: {
+                    show() {
+                        this.visible = true;
+                        updateStatusBar(this.currentTab);
+                        document.body.style.overflow = 'hidden';
+                    },
+                    hide() {
+                        this.visible = false;
+                        document.body.style.overflow = '';
+                    },
+                    closeOverlay() {
+                        closeVueOverlay();
+                    },
+                    goToTab(id) {
+                        this.currentTab = id;
+                        updateStatusBar(id);
+                    },
+                },
+                watch: {
+                    currentTab(newVal) {
+                        updateStatusBar(newVal);
+                    },
+                    visible(newVal) {
+                        if (!newVal) {
+                            document.body.style.overflow = '';
+                        }
+                    },
+                },
+                mounted() {
+                    console.log('🟢 Vue 3 应用已挂载');
+                },
+            });
+
+            const vueInstance = vueApp.mount('#vue-app');
+            window.vueApp = vueInstance;
+        } else {
+            console.error('❌ Vue 3 未能加载，请检查网络或CDN地址');
+        }
+
+        console.log('🖤 LuHe 个人主页已就绪');
     </script>
 </body>
 </html>

@@ -10,6 +10,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
 
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js">
+    </script>
+
     <style>
         :root {
             --bg-deep: #0a0505;
@@ -477,7 +481,7 @@
         .profile-card {
             position: fixed;
             bottom: 115px;
-            right: 80px;  /* 从28px改为80px，向左移动 */
+            right: 80px;
             z-index: 10;
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.12);
@@ -569,7 +573,7 @@
             position: fixed;
             bottom: 16px;
             left: 24px;
-            right: 24px;  /* 与左侧边距完全一致，保持对称 */
+            right: 24px;
             z-index: 10;
             display: flex;
             align-items: center;
@@ -848,6 +852,294 @@
             }
         }
 
+        /* ============================================================
+           Vue 全屏内容区域样式
+           ============================================================ */
+        .vue-overlay-root {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 200;
+            pointer-events: auto;
+            display: flex;
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+        }
+
+        /* Vue Transition 动画 */
+        .vue-overlay-enter-active {
+            transition: all 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .vue-overlay-leave-active {
+            transition: all 0.4s cubic-bezier(0.6, 0, 0.8, 1);
+        }
+        .vue-overlay-enter-from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        .vue-overlay-leave-to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        /* Vue 覆盖层主容器 */
+        .vue-main-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(6, 2, 2, 0.92);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            display: flex;
+            flex-direction: row;
+            z-index: 1;
+        }
+
+        /* 左侧导航栏 */
+        .vue-sidebar {
+            width: 220px;
+            min-width: 220px;
+            height: 100%;
+            background: rgba(18, 6, 6, 0.7);
+            border-right: 1px solid rgba(140, 40, 40, 0.4);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 0;
+            gap: 6px;
+            box-shadow: 2px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+        .vue-sidebar-header {
+            padding: 0 20px 22px 20px;
+            border-bottom: 1px solid rgba(140, 40, 40, 0.3);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .vue-sidebar-title {
+            font-size: 22px;
+            letter-spacing: 4px;
+            color: #f0d8d8;
+            text-shadow: 0 0 12px rgba(200, 60, 60, 0.4);
+        }
+        .vue-sidebar-subtitle {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: rgba(200, 130, 130, 0.5);
+            margin-top: 4px;
+        }
+        .vue-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 22px;
+            margin: 0 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            color: rgba(200, 150, 150, 0.6);
+            font-size: 15px;
+            letter-spacing: 2px;
+            position: relative;
+            outline: none;
+            background: transparent;
+        }
+        .vue-nav-item:hover {
+            background: rgba(100, 25, 25, 0.3);
+            border-color: rgba(180, 50, 50, 0.35);
+            color: #e8c8c8;
+            box-shadow: 0 0 10px rgba(160, 30, 30, 0.2);
+        }
+        .vue-nav-item.active {
+            background: rgba(140, 30, 30, 0.45);
+            border-color: rgba(210, 55, 55, 0.6);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(200, 45, 45, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+        .vue-nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: #e06060;
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(220, 60, 60, 0.6);
+        }
+        .vue-nav-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .vue-nav-item.active .vue-nav-dot {
+            box-shadow: 0 0 10px currentColor;
+            background: #f5c0c0;
+        }
+
+        /* 右侧内容区 */
+        .vue-content-area {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .vue-content-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 28px;
+            border-bottom: 1px solid rgba(140, 40, 40, 0.25);
+            flex-shrink: 0;
+        }
+        .vue-content-title {
+            font-size: 20px;
+            letter-spacing: 3px;
+            color: #f0d8d8;
+            text-shadow: 0 0 8px rgba(200, 60, 60, 0.3);
+        }
+        .vue-close-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(80, 20, 20, 0.5);
+            border: 1.5px solid rgba(180, 50, 50, 0.5);
+            color: #f0c8c8;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            letter-spacing: 0;
+            font-family: 'VT323', monospace;
+        }
+        .vue-close-btn:hover {
+            background: rgba(160, 35, 35, 0.7);
+            border-color: rgba(220, 65, 65, 0.7);
+            box-shadow: 0 0 20px rgba(200, 40, 40, 0.5);
+            color: #fff;
+            transform: scale(1.08);
+        }
+        .vue-close-btn:active {
+            transform: scale(0.9);
+            transition: transform 0.1s ease;
+        }
+        .vue-content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 32px;
+            scroll-behavior: smooth;
+        }
+        .vue-content-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-track {
+            background: rgba(30, 10, 10, 0.4);
+            border-radius: 3px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-thumb {
+            background: rgba(140, 40, 40, 0.5);
+            border-radius: 3px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(180, 50, 50, 0.7);
+        }
+
+        /* 内容面板过渡 */
+        .panel-fade-enter-active,
+        .panel-fade-leave-active {
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .panel-fade-enter-from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        .panel-fade-leave-to {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        /* 内容卡片样式 */
+        .vue-card {
+            background: rgba(25, 8, 8, 0.5);
+            border: 1px solid rgba(140, 35, 35, 0.3);
+            border-radius: 12px;
+            padding: 22px 26px;
+            margin-bottom: 18px;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.3);
+        }
+        .vue-card:hover {
+            border-color: rgba(180, 50, 50, 0.55);
+            box-shadow: 0 4px 24px rgba(140, 25, 25, 0.35);
+            background: rgba(30, 10, 10, 0.6);
+            transform: translateY(-2px);
+        }
+        .vue-card-title {
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: #f0d8d8;
+            margin-bottom: 8px;
+        }
+        .vue-card-desc {
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            color: rgba(200, 150, 150, 0.7);
+            line-height: 1.6;
+        }
+        .vue-tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .vue-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 14px;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            background: rgba(100, 25, 25, 0.4);
+            border: 1px solid rgba(180, 50, 50, 0.35);
+            color: #e8c0c0;
+            transition: all 0.3s ease;
+        }
+        .vue-tag:hover {
+            background: rgba(150, 35, 35, 0.5);
+            border-color: rgba(210, 60, 60, 0.55);
+            box-shadow: 0 0 8px rgba(180, 35, 35, 0.3);
+            color: #fff;
+        }
+        .vue-highlight-num {
+            font-size: 40px;
+            letter-spacing: 2px;
+            color: #f5e0e0;
+            text-shadow: 0 0 16px rgba(220, 60, 60, 0.5);
+            line-height: 1;
+        }
+        .vue-link {
+            color: #e08080;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            letter-spacing: 1.5px;
+        }
+        .vue-link:hover {
+            color: #f5c0c0;
+            text-shadow: 0 0 10px rgba(220, 80, 80, 0.5);
+        }
+
         /* ==================== 响应式 ==================== */
         @media (max-width: 768px) {
             .top-right-panel {
@@ -908,7 +1200,7 @@
             }
             .status-bar {
                 left: 12px;
-                right: 12px;  /* 平板端左右对称 */
+                right: 12px;
                 font-size: 8px;
             }
             .logo {
@@ -940,7 +1232,7 @@
             }
             .profile-card {
                 bottom: 95px;
-                right: 40px;  /* 平板端左移 */
+                right: 40px;
                 padding: 22px 24px 20px 24px;
                 min-width: 260px;
                 max-width: 320px;
@@ -966,6 +1258,70 @@
             .profile-info-value {
                 font-size: 14px;
                 letter-spacing: 1.5px;
+            }
+
+            /* Vue 区域响应式 */
+            .vue-main-overlay {
+                flex-direction: column;
+            }
+            .vue-sidebar {
+                width: 100%;
+                min-width: 100%;
+                height: auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 10px 8px;
+                gap: 4px;
+                border-right: none;
+                border-bottom: 1px solid rgba(140, 40, 40, 0.4);
+                justify-content: center;
+                box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+            }
+            .vue-sidebar-header {
+                display: none;
+            }
+            .vue-nav-item {
+                padding: 8px 12px;
+                margin: 2px;
+                font-size: 12px;
+                letter-spacing: 1.5px;
+                border-radius: 6px;
+                gap: 6px;
+            }
+            .vue-nav-item.active::before {
+                display: none;
+            }
+            .vue-nav-dot {
+                width: 4px;
+                height: 4px;
+            }
+            .vue-content-topbar {
+                padding: 12px 16px;
+            }
+            .vue-content-title {
+                font-size: 16px;
+                letter-spacing: 2px;
+            }
+            .vue-close-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 13px;
+            }
+            .vue-content-scroll {
+                padding: 16px;
+            }
+            .vue-card {
+                padding: 14px 16px;
+                margin-bottom: 12px;
+            }
+            .vue-card-title {
+                font-size: 15px;
+            }
+            .vue-card-desc {
+                font-size: 11px;
+            }
+            .vue-highlight-num {
+                font-size: 28px;
             }
         }
         @media (max-width: 480px) {
@@ -1016,7 +1372,7 @@
             }
             .profile-card {
                 bottom: 70px;
-                right: 24px;  /* 手机端左移 */
+                right: 24px;
                 padding: 16px 18px 14px 18px;
                 min-width: 200px;
                 max-width: 240px;
@@ -1055,7 +1411,20 @@
             }
             .status-bar {
                 left: 8px;
-                right: 8px;  /* 手机端左右对称 */
+                right: 8px;
+            }
+            .vue-nav-item {
+                padding: 6px 8px;
+                font-size: 10px;
+                letter-spacing: 1px;
+                border-radius: 4px;
+            }
+            .vue-content-scroll {
+                padding: 12px;
+            }
+            .vue-card {
+                padding: 10px 12px;
+                border-radius: 8px;
             }
         }
 
@@ -1195,376 +1564,628 @@
     <!-- 滑动过渡遮罩 -->
     <div class="slide-mask" id="slideMask"></div>
 
-    <script>
-        // ==================== 粒子连线动画 ====================
-        const canvasEl = document.getElementById('particle-canvas');
-        const ctx = canvasEl.getContext('2d');
+    <!-- ==================== Vue 3 管理的全屏内容区域 ==================== -->
+    <div id="vue-app">
+        <!-- Vue Transition 包裹的全屏覆盖层 -->
+        <transition name="vue-overlay">
+            <div v-if="visible" class="vue-overlay-root">
+                <div class="vue-main-overlay">
+                    <!-- 左侧导航栏 -->
+                    <nav class="vue-sidebar">
+                        <div class="vue-sidebar-header">
+                            <div class="vue-sidebar-title">鹿禾·LuHe</div>
+                            <div class="vue-sidebar-subtitle">NAVIGATION</div>
+                        </div>
+                        <div
+                        v-for="tab in tabs"
+                        :key="tab.id"
+                        class="vue-nav-item"
+                        :class="{ active: currentTab === tab.id }"
+                        @click="goToTab(tab.id)"
+                        :title="'场景 ' + String(tab.id).padStart(2, '0') + ' · ' + tab.name"
+                        >
+                        <span class="vue-nav-dot"></span>
+                        <span>{{ tab.name }}</span>
+                    </div>
+                </nav>
 
-        let width, height;
-        let particles = [];
-        const particleCount = 80;
-        const connectDistance = 150;
+                <!-- 右侧内容区 -->
+                <div class="vue-content-area">
+                    <div class="vue-content-topbar">
+                        <span class="vue-content-title">
+                            SCENCE {{ String(currentTab).padStart(2, '0') }} · {{ currentTabData.name }}
+                        </span>
+                        <button class="vue-close-btn" @click="closeOverlay" title="关闭 · 返回主页">✕</button>
+                    </div>
+                    <div class="vue-content-scroll">
+                        <transition name="panel-fade" mode="out-in">
+                            <!-- 场景01：关于我 -->
+                            <div v-if="currentTab === 1" :key="1">
+                                <div class="vue-card">
+                                    <div class="vue-card-title">关于鹿禾</div>
+                                    <div class="vue-card-desc">
+                                        嗨，我是鹿禾。一名穿梭于代码与想象力之间的创造者。
+                                        我相信技术不仅是工具，更是塑造未来轮廓的画笔。
+                                        在这里，Web、AI 与视觉设计交汇，诞生出独特的故事。
+                                    </div>
+                                    <div class="vue-tag-row">
+                                        <span class="vue-tag">Web开发</span>
+                                        <span class="vue-tag">AI探索</span>
+                                        <span class="vue-tag">视觉设计</span>
+                                        <span class="vue-tag">创意编码</span>
+                                    </div>
+                                </div>
+                                <div class="vue-card">
+                                    <div class="vue-card-title">当前位置</div>
+                                    <div class="vue-card-desc">
+                                        📍 Shi Jia Zhuang · 中国<br />
+                                        🎯 专注领域：Web 全栈 · AI 应用 · 交互视觉
+                                    </div>
+                                </div>
+                                <div class="vue-card">
+                                    <div class="vue-card-title">座右铭</div>
+                                    <div class="vue-card-desc" style="font-size:16px;color:#f0d8d8;">
+                                        "在代码与想象之间，训练未来的轮廓。"
+                                    </div>
+                                </div>
+                            </div>
 
-        function resize() {
-            width = canvasEl.width = window.innerWidth;
-            height = canvasEl.height = window.innerHeight;
+                            <!-- 场景02：项目作品 -->
+                            <div v-if="currentTab === 2" :key="2">
+                                <div class="vue-card" v-for="project in projects" :key="project.id">
+                                    <div class="vue-card-title">{{ project.title }}</div>
+                                    <div class="vue-card-desc">{{ project.desc }}</div>
+                                    <div class="vue-tag-row">
+                                        <span class="vue-tag" v-for="tech in project.techs" :key="tech">{{ tech }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 场景03：技能领域 -->
+                            <div v-if="currentTab === 3" :key="3">
+                                <div class="vue-card" v-for="skillGroup in skillGroups" :key="skillGroup.category">
+                                    <div class="vue-card-title">{{ skillGroup.category }}</div>
+                                    <div class="vue-card-desc">{{ skillGroup.description }}</div>
+                                    <div class="vue-tag-row">
+                                        <span class="vue-tag" v-for="skill in skillGroup.skills" :key="skill">{{ skill }}</span>
+                                    </div>
+                                </div>
+                                <div class="vue-card" style="text-align:center;">
+                                    <div class="vue-highlight-num">{{ totalSkillCount }}+</div>
+                                    <div class="vue-card-desc" style="margin-top:4px;">技能标签总数 · 持续增长中</div>
+                                </div>
+                            </div>
+
+                            <!-- 场景04：联系方式 -->
+                            <div v-if="currentTab === 4" :key="4">
+                                <div class="vue-card" v-for="contact in contacts" :key="contact.label">
+                                    <div class="vue-card-title">{{ contact.label }}</div>
+                                    <div class="vue-card-desc">
+                                        <a v-if="contact.link" :href="contact.link" target="_blank" class="vue-link">{{ contact.value }}</a>
+                                        <span v-else>{{ contact.value }}</span>
+                                    </div>
+                                </div>
+                                <div class="vue-card">
+                                    <div class="vue-card-title">留言</div>
+                                    <div class="vue-card-desc">
+                                        欢迎随时联系，无论是技术交流还是创意碰撞，我都很期待与你对话。
+                                    </div>
+                                </div>
+                            </div>
+                        </transition>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </transition>
+</div>
+
+<script>
+    // ==================== 粒子连线动画 ====================
+    const canvasEl = document.getElementById('particle-canvas');
+    const ctx = canvasEl.getContext('2d');
+
+    let width, height;
+    let particles = [];
+    const particleCount = 80;
+    const connectDistance = 150;
+
+    function resize() {
+        width = canvasEl.width = window.innerWidth;
+        height = canvasEl.height = window.innerHeight;
+    }
+
+    class Particle {
+        constructor() {
+            this.reset();
         }
-
-        class Particle {
-            constructor() {
-                this.reset();
-            }
-            reset() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 0.3;
-                this.vy = (Math.random() - 0.5) * 0.3;
-                this.radius = Math.random() * 1.5 + 0.5;
-                this.alpha = Math.random() * 0.5 + 0.3;
-                this.pulseSpeed = Math.random() * 0.02 + 0.005;
-                this.pulsePhase = Math.random() * Math.PI * 2;
-            }
-            update(time) {
-                this.x += this.vx;
-                this.y += this.vy;
-                if (this.x < 0 || this.x > width) this.vx *= -1;
-                if (this.y < 0 || this.y > height) this.vy *= -1;
-                this.currentAlpha = this.alpha + Math.sin(time * this.pulseSpeed + this.pulsePhase) * 0.2;
-            }
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(220, 90, 90, ${this.currentAlpha})`;
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius * 3, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(200, 60, 60, ${this.currentAlpha * 0.15})`;
-                ctx.fill();
-            }
+        reset() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.vx = (Math.random() - 0.5) * 0.3;
+            this.vy = (Math.random() - 0.5) * 0.3;
+            this.radius = Math.random() * 1.5 + 0.5;
+            this.alpha = Math.random() * 0.5 + 0.3;
+            this.pulseSpeed = Math.random() * 0.02 + 0.005;
+            this.pulsePhase = Math.random() * Math.PI * 2;
         }
-
-        function initParticles() {
-            particles = [];
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
-            }
+        update(time) {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < 0 || this.x > width) this.vx *= -1;
+            if (this.y < 0 || this.y > height) this.vy *= -1;
+            this.currentAlpha = this.alpha + Math.sin(time * this.pulseSpeed + this.pulsePhase) * 0.2;
         }
-
-        function drawConnections() {
-            for (let i = 0; i < particles.length; i++) {
-                for (let j = i + 1; j < particles.length; j++) {
-                    const dx = particles[i].x - particles[j].x;
-                    const dy = particles[i].y - particles[j].y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < connectDistance) {
-                        const alpha = (1 - dist / connectDistance) * 0.25;
-                        ctx.beginPath();
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.strokeStyle = `rgba(180, 60, 60, ${alpha})`;
-                        ctx.lineWidth = 0.8;
-                        ctx.stroke();
-                    }
-                }
-            }
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(220, 90, 90, ${this.currentAlpha})`;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius * 3, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(200, 60, 60, ${this.currentAlpha * 0.15})`;
+            ctx.fill();
         }
+    }
 
-        let startTime = Date.now();
-
-        function animate() {
-            const time = Date.now() - startTime;
-            ctx.clearRect(0, 0, width, height);
-            particles.forEach(p => {
-                p.update(time);
-                p.draw();
-            });
-            drawConnections();
-            requestAnimationFrame(animate);
+    function initParticles() {
+        particles = [];
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
         }
+    }
 
-        let mouseX = -1000;
-        let mouseY = -1000;
-        document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-            particles.forEach(p => {
-                const dx = mouseX - p.x;
-                const dy = mouseY - p.y;
+    function drawConnections() {
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 120) {
-                    const force = (120 - dist) / 120 * 0.05;
-                    p.vx += (dx / dist) * force;
-                    p.vy += (dy / dist) * force;
+                if (dist < connectDistance) {
+                    const alpha = (1 - dist / connectDistance) * 0.25;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.strokeStyle = `rgba(180, 60, 60, ${alpha})`;
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
                 }
-            });
-        });
-
-        // ==================== HTML5 Audio 音乐控制 ====================
-        const bgAudio = document.getElementById('bgAudio');
-        const musicPlayBtn = document.getElementById('musicPlayBtn');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const noteIcon = musicPlayBtn.querySelector('.note-icon');
-
-        bgAudio.volume = parseInt(volumeSlider.value) / 100;
-
-        function updateMusicBtnUI() {
-            if (bgAudio.paused) {
-                musicPlayBtn.classList.remove('playing');
-                noteIcon.textContent = '♫';
-                musicPlayBtn.title = '播放背景音乐';
-            } else {
-                musicPlayBtn.classList.add('playing');
-                noteIcon.textContent = '♪';
-                musicPlayBtn.title = '暂停背景音乐';
             }
         }
+    }
 
-        musicPlayBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
+    let startTime = Date.now();
+
+    function animate() {
+        const time = Date.now() - startTime;
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => {
+            p.update(time);
+            p.draw();
+        });
+        drawConnections();
+        requestAnimationFrame(animate);
+    }
+
+    let mouseX = -1000;
+    let mouseY = -1000;
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        particles.forEach(p => {
+            const dx = mouseX - p.x;
+            const dy = mouseY - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 120) {
+                const force = (120 - dist) / 120 * 0.05;
+                p.vx += (dx / dist) * force;
+                p.vy += (dy / dist) * force;
+            }
+        });
+    });
+
+    // ==================== HTML5 Audio 音乐控制 ====================
+    const bgAudio = document.getElementById('bgAudio');
+    const musicPlayBtn = document.getElementById('musicPlayBtn');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const noteIcon = musicPlayBtn.querySelector('.note-icon');
+
+    bgAudio.volume = parseInt(volumeSlider.value) / 100;
+
+    function updateMusicBtnUI() {
+        if (bgAudio.paused) {
+            musicPlayBtn.classList.remove('playing');
+            noteIcon.textContent = '♫';
+            musicPlayBtn.title = '播放背景音乐';
+        } else {
+            musicPlayBtn.classList.add('playing');
+            noteIcon.textContent = '♪';
+            musicPlayBtn.title = '暂停背景音乐';
+        }
+    }
+
+    musicPlayBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (bgAudio.paused) {
+            bgAudio.play().then(() => {
+                updateMusicBtnUI();
+            }).catch(err => {
+                console.warn('音乐播放失败（可能需要用户交互）:', err.message);
+            });
+        } else {
+            bgAudio.pause();
+            updateMusicBtnUI();
+        }
+    });
+
+    volumeSlider.addEventListener('input', () => {
+        bgAudio.volume = parseInt(volumeSlider.value) / 100;
+    });
+    volumeSlider.addEventListener('change', () => {
+        bgAudio.volume = parseInt(volumeSlider.value) / 100;
+    });
+
+    bgAudio.addEventListener('play', updateMusicBtnUI);
+    bgAudio.addEventListener('pause', updateMusicBtnUI);
+    bgAudio.addEventListener('ended', updateMusicBtnUI);
+    bgAudio.addEventListener('volumechange', () => {
+        const volPercent = Math.round(bgAudio.volume * 100);
+        if (parseInt(volumeSlider.value) !== volPercent) {
+            volumeSlider.value = volPercent;
+        }
+    });
+
+    updateMusicBtnUI();
+
+    // ==================== 页面导航（与Vue联动） ====================
+    const navDashes = document.querySelectorAll('.nav-dash');
+    let currentPage = 1;
+    const totalPages = navDashes.length;
+
+    function updateDashActive(pageNum) {
+        currentPage = pageNum;
+        navDashes.forEach(d => {
+            const p = parseInt(d.getAttribute('data-page'));
+            d.classList.toggle('active', p === pageNum);
+            d.title = p === pageNum ?
+                `场景 ${String(p).padStart(2, '0')} · 当前` :
+                `场景 ${String(p).padStart(2, '0')}`;
+        });
+        document.getElementById('pageNavIndicator').title =
+            `页面导航 · 当前第${currentPage}页 / 共${totalPages}页`;
+        const statusSpan = document.querySelector('.status-bar span');
+        if (statusSpan) {
+            statusSpan.textContent =
+                `SCENCE ${String(currentPage).padStart(2, '0')} 主 IDLE LOOP`;
+        }
+    }
+
+    navDashes.forEach(dash => {
+        dash.addEventListener('click', () => {
+            const pageNum = parseInt(dash.getAttribute('data-page'));
+            if (pageNum === currentPage && !window.vueApp?.visible) return;
+            updateDashActive(pageNum);
+            // 如果Vue区域可见，同步切换Vue内部tab
+            if (window.vueApp && window.vueApp.visible) {
+                window.vueApp.goToTab(pageNum);
+            }
+            console.log(`导航到第 ${currentPage} 页（共 ${totalPages} 页）`);
+        });
+    });
+
+    // ==================== 覆盖层 + 所有UI元素联动 ====================
+    const welcomeOverlay = document.getElementById('welcomeOverlay');
+    const enterMainBtn = document.getElementById('enterMainBtn');
+    const topRightPanel = document.getElementById('topRightPanel');
+    const welcomeArea = document.getElementById('welcomeArea');
+    const logoEl = document.querySelector('.logo');
+    const statusBarEl = document.querySelector('.status-bar');
+    const controlsEl = document.querySelector('.controls');
+    const sideLineEl = document.querySelector('.side-line');
+    const profileCardEl = document.getElementById('profileCard');
+
+    // 所有需要在overlay期间隐藏的UI元素
+    const allUiElements = [
+        logoEl,
+        topRightPanel,
+        welcomeArea,
+        statusBarEl,
+        controlsEl,
+        sideLineEl,
+        profileCardEl
+    ];
+
+    // 显示覆盖层（淡入 1s），确保所有UI元素隐藏
+    function showWelcomeOverlay() {
+        if (
+            welcomeOverlay &&
+            !welcomeOverlay.classList.contains('visible') &&
+            !welcomeOverlay.classList.contains('fading-out')
+        ) {
+            welcomeOverlay.classList.add('visible');
+            allUiElements.forEach(el => {
+                if (el && !el.classList.contains('overlay-active')) {
+                    el.classList.add('overlay-active');
+                }
+            });
+        }
+    }
+
+    // 页面加载后显示覆盖层
+    window.addEventListener('load', () => {
+        setTimeout(showWelcomeOverlay, 300);
+    });
+    if (document.readyState === 'complete') {
+        setTimeout(showWelcomeOverlay, 300);
+    }
+
+    // 点击"点击进入主页" → 覆盖层淡出 1s + 所有UI元素淡入 1s
+    enterMainBtn.addEventListener('click', () => {
+        if (welcomeOverlay.classList.contains('visible')) {
+            welcomeOverlay.classList.remove('visible');
+            welcomeOverlay.classList.add('fading-out');
+            allUiElements.forEach(el => {
+                if (el) {
+                    el.classList.remove('overlay-active');
+                }
+            });
+            setTimeout(() => {
+                welcomeOverlay.classList.remove('fading-out');
+            }, 1000);
+            bgAudio.play().then(() => {
+                updateMusicBtnUI();
+                console.log('🎵 背景音乐开始播放');
+            }).catch(err => {
+                console.warn('音乐播放失败:', err.message);
+            });
+            console.log('欢迎覆盖层已关闭，所有UI元素已淡入，进入主页。');
+        }
+    });
+
+    // ==================== 滑动进入交互（触发Vue区域） ====================
+    const enterBtn = document.getElementById('enterBtn');
+    const slideMask = document.getElementById('slideMask');
+
+    let touchStartX = 0;
+    let touchDragging = false;
+
+    enterBtn.addEventListener('click', () => {
+        enterSite();
+    });
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchDragging = true;
+    });
+    document.addEventListener('touchend', (e) => {
+        if (!touchDragging) return;
+        const endX = e.changedTouches[0].clientX;
+        if (endX - touchStartX > 80) {
+            enterSite();
+        }
+        touchDragging = false;
+    });
+
+    let mouseStartX = 0;
+    let mouseDown = false;
+    document.addEventListener('mousedown', (e) => {
+        mouseStartX = e.clientX;
+        mouseDown = true;
+    });
+    document.addEventListener('mouseup', (e) => {
+        if (!mouseDown) return;
+        if (e.clientX - mouseStartX > 100) {
+            enterSite();
+        }
+        mouseDown = false;
+    });
+
+    function enterSite() {
+        // 如果Vue区域已经可见，不重复触发
+        if (window.vueApp && window.vueApp.visible) return;
+        slideMask.classList.add('active');
+        if (bgAudio.paused) {
+            bgAudio.play().then(updateMusicBtnUI).catch(() => {});
+        }
+        // 800ms 滑动动画完成后，显示Vue区域
+        setTimeout(() => {
+            if (window.vueApp) {
+                window.vueApp.show();
+                console.log('🖥 Vue 内容区域已打开');
+            }
+        }, 800);
+    }
+
+    // 关闭Vue区域（供Vue调用）
+    function closeVueOverlay() {
+        if (window.vueApp && window.vueApp.visible) {
+            window.vueApp.hide();
+        }
+        // 延迟移除遮罩，让Vue退出动画先播放
+        setTimeout(() => {
+            slideMask.classList.remove('active');
+        }, 450);
+    }
+
+    // ==================== 键盘快捷键 ====================
+    document.addEventListener('keydown', (e) => {
+        // 如果覆盖层正在显示，忽略快捷键
+        if (welcomeOverlay.classList.contains('visible')) {
+            return;
+        }
+        // ESC 关闭Vue区域
+        if (e.code === 'Escape') {
+            if (window.vueApp && window.vueApp.visible) {
+                e.preventDefault();
+                closeVueOverlay();
+                return;
+            }
+        }
+        if (e.code === 'Space' && e.target === document.body) {
+            e.preventDefault();
             if (bgAudio.paused) {
-                bgAudio.play().then(() => {
-                    updateMusicBtnUI();
-                }).catch(err => {
-                    console.warn('音乐播放失败（可能需要用户交互）:', err.message);
-                });
+                bgAudio.play().then(updateMusicBtnUI).catch(() => {});
             } else {
                 bgAudio.pause();
                 updateMusicBtnUI();
             }
-        });
-
-        volumeSlider.addEventListener('input', () => {
-            bgAudio.volume = parseInt(volumeSlider.value) / 100;
-        });
-        volumeSlider.addEventListener('change', () => {
-            bgAudio.volume = parseInt(volumeSlider.value) / 100;
-        });
-
-        bgAudio.addEventListener('play', updateMusicBtnUI);
-        bgAudio.addEventListener('pause', updateMusicBtnUI);
-        bgAudio.addEventListener('ended', updateMusicBtnUI);
-        bgAudio.addEventListener('volumechange', () => {
-            const volPercent = Math.round(bgAudio.volume * 100);
-            if (parseInt(volumeSlider.value) !== volPercent) {
-                volumeSlider.value = volPercent;
-            }
-        });
-
-        updateMusicBtnUI();
-
-        // ==================== 页面导航 ====================
-        const navDashes = document.querySelectorAll('.nav-dash');
-        let currentPage = 1;
-        const totalPages = navDashes.length;
-
-        navDashes.forEach(dash => {
-            dash.addEventListener('click', () => {
-                const pageNum = parseInt(dash.getAttribute('data-page'));
-                if (pageNum === currentPage) return;
-                navDashes.forEach(d => d.classList.remove('active'));
-                dash.classList.add('active');
-                currentPage = pageNum;
-                document.getElementById('pageNavIndicator').title =
-                    `页面导航 · 当前第${currentPage}页 / 共${totalPages}页`;
-                navDashes.forEach(d => {
-                    const p = parseInt(d.getAttribute('data-page'));
-                    d.title = p === currentPage ?
-                        `场景 ${String(p).padStart(2, '0')} · 当前` :
-                        `场景 ${String(p).padStart(2, '0')}`;
-                });
-                const statusSpan = document.querySelector('.status-bar span');
-                if (statusSpan) {
-                    statusSpan.textContent =
-                        `SCENCE ${String(currentPage).padStart(2, '0')} 主 IDLE LOOP`;
-                }
-                console.log(`导航到第 ${currentPage} 页（共 ${totalPages} 页）`);
-            });
-        });
-
-        // ==================== 覆盖层 + 所有UI元素联动 ====================
-        const welcomeOverlay = document.getElementById('welcomeOverlay');
-        const enterMainBtn = document.getElementById('enterMainBtn');
-        const topRightPanel = document.getElementById('topRightPanel');
-        const welcomeArea = document.getElementById('welcomeArea');
-        const logoEl = document.querySelector('.logo');
-        const statusBarEl = document.querySelector('.status-bar');
-        const controlsEl = document.querySelector('.controls');
-        const sideLineEl = document.querySelector('.side-line');
-        const profileCardEl = document.getElementById('profileCard');
-
-        // 所有需要在overlay期间隐藏的UI元素
-        const allUiElements = [
-            logoEl,
-            topRightPanel,
-            welcomeArea,
-            statusBarEl,
-            controlsEl,
-            sideLineEl,
-            profileCardEl
-        ];
-
-        // 显示覆盖层（淡入 1s），确保所有UI元素隐藏
-        function showWelcomeOverlay() {
-            if (
-                welcomeOverlay &&
-                !welcomeOverlay.classList.contains('visible') &&
-                !welcomeOverlay.classList.contains('fading-out')
-            ) {
-                // 覆盖层淡入
-                welcomeOverlay.classList.add('visible');
-                // 确保所有UI元素都隐藏
-                allUiElements.forEach(el => {
-                    if (el && !el.classList.contains('overlay-active')) {
-                        el.classList.add('overlay-active');
-                    }
-                });
-            }
         }
-
-        // 页面加载后 1.6s 显示覆盖层
-        window.addEventListener('load', () => {
-            setTimeout(showWelcomeOverlay, 300);
-        });
-        if (document.readyState === 'complete') {
-            setTimeout(showWelcomeOverlay, 300);
+        if (e.code === 'ArrowUp' && e.target === document.body) {
+            e.preventDefault();
+            const newVol = Math.min(100, parseInt(volumeSlider.value) + 5);
+            volumeSlider.value = newVol;
+            bgAudio.volume = newVol / 100;
         }
-
-        // 点击"点击进入主页" → 覆盖层淡出 1s + 所有UI元素淡入 1s
-        enterMainBtn.addEventListener('click', () => {
-            if (welcomeOverlay.classList.contains('visible')) {
-                // 覆盖层淡出
-                welcomeOverlay.classList.remove('visible');
-                welcomeOverlay.classList.add('fading-out');
-                // 所有UI元素淡入（移除隐藏类）
-                allUiElements.forEach(el => {
-                    if (el) {
-                        el.classList.remove('overlay-active');
-                    }
-                });
-
-                // 1s 后移除 fading-out 类
-                setTimeout(() => {
-                    welcomeOverlay.classList.remove('fading-out');
-                }, 1000);
-
-                // 用户交互后播放背景音乐
-                bgAudio.play().then(() => {
-                    updateMusicBtnUI();
-                    console.log('🎵 背景音乐开始播放');
-                }).catch(err => {
-                    console.warn('音乐播放失败:', err.message);
-                });
-
-                console.log('欢迎覆盖层已关闭，所有UI元素已淡入，进入主页。');
-            }
-        });
-
-        // ==================== 滑动进入交互 ====================
-        const enterBtn = document.getElementById('enterBtn');
-        const slideMask = document.getElementById('slideMask');
-
-        let touchStartX = 0;
-        let touchDragging = false;
-
-        enterBtn.addEventListener('click', () => {
-            enterSite();
-        });
-        document.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchDragging = true;
-        });
-        document.addEventListener('touchend', (e) => {
-            if (!touchDragging) return;
-            const endX = e.changedTouches[0].clientX;
-            if (endX - touchStartX > 80) {
-                enterSite();
-            }
-            touchDragging = false;
-        });
-
-        let mouseStartX = 0;
-        let mouseDown = false;
-        document.addEventListener('mousedown', (e) => {
-            mouseStartX = e.clientX;
-            mouseDown = true;
-        });
-        document.addEventListener('mouseup', (e) => {
-            if (!mouseDown) return;
-            if (e.clientX - mouseStartX > 100) {
-                enterSite();
-            }
-            mouseDown = false;
-        });
-
-        function enterSite() {
-            slideMask.classList.add('active');
-            if (bgAudio.paused) {
-                bgAudio.play().then(updateMusicBtnUI).catch(() => {});
-            }
-            setTimeout(() => {
-                console.log('滑动进入主页');
-            }, 800);
+        if (e.code === 'ArrowDown' && e.target === document.body) {
+            e.preventDefault();
+            const newVol = Math.max(0, parseInt(volumeSlider.value) - 5);
+            volumeSlider.value = newVol;
+            bgAudio.volume = newVol / 100;
         }
+        if (e.code === 'ArrowRight' && e.target === document.body && currentPage < totalPages) {
+            e.preventDefault();
+            const nextDash = document.querySelector(`.nav-dash[data-page="${currentPage + 1}"]`);
+            if (nextDash) nextDash.click();
+        }
+        if (e.code === 'ArrowLeft' && e.target === document.body && currentPage > 1) {
+            e.preventDefault();
+            const prevDash = document.querySelector(`.nav-dash[data-page="${currentPage - 1}"]`);
+            if (prevDash) prevDash.click();
+        }
+    });
 
-        // ==================== 键盘快捷键 ====================
-        document.addEventListener('keydown', (e) => {
-            // 如果覆盖层正在显示，忽略快捷键（避免在入场动画期间操作）
-            if (welcomeOverlay.classList.contains('visible')) {
-                return;
-            }
-            if (e.code === 'Space' && e.target === document.body) {
-                e.preventDefault();
-                if (bgAudio.paused) {
-                    bgAudio.play().then(updateMusicBtnUI).catch(() => {});
-                } else {
-                    bgAudio.pause();
-                    updateMusicBtnUI();
-                }
-            }
-            if (e.code === 'ArrowUp' && e.target === document.body) {
-                e.preventDefault();
-                const newVol = Math.min(100, parseInt(volumeSlider.value) + 5);
-                volumeSlider.value = newVol;
-                bgAudio.volume = newVol / 100;
-            }
-            if (e.code === 'ArrowDown' && e.target === document.body) {
-                e.preventDefault();
-                const newVol = Math.max(0, parseInt(volumeSlider.value) - 5);
-                volumeSlider.value = newVol;
-                bgAudio.volume = newVol / 100;
-            }
-            if (e.code === 'ArrowRight' && e.target === document.body && currentPage < totalPages) {
-                e.preventDefault();
-                const nextDash = document.querySelector(`.nav-dash[data-page="${currentPage + 1}"]`);
-                if (nextDash) nextDash.click();
-            }
-            if (e.code === 'ArrowLeft' && e.target === document.body && currentPage > 1) {
-                e.preventDefault();
-                const prevDash = document.querySelector(`.nav-dash[data-page="${currentPage - 1}"]`);
-                if (prevDash) prevDash.click();
-            }
-        });
-
-        // ==================== 初始化 ====================
-        window.addEventListener('resize', () => {
-            resize();
-            initParticles();
-        });
+    // ==================== 初始化粒子 ====================
+    window.addEventListener('resize', () => {
         resize();
         initParticles();
-        animate();
+    });
+    resize();
+    initParticles();
+    animate();
 
-        console.log('🖤 LuHe / miao~ 主页已就绪');
-        console.log('  初始状态：仅显示背景（粒子/网格/暗角）');
-        console.log('  1.6s 后显示欢迎覆盖层（"别来无恙啊"）');
-        console.log('  点击"进入主页"后：覆盖层淡出，所有UI元素淡入');
-        console.log('  右上角 · 音乐控制器 | 页面导航');
-        console.log('  右下角 · 个人信息卡（PROFILE）- 已向左移动');
-        console.log('  底部状态栏 · 左右边距已对称');
-        console.log('  快捷键：空格=播放/暂停 | ↑↓=音量 | ←→=切换页面');
-        console.log('  覆盖层淡入/淡出 1s · UI元素联动淡入/淡出 1s');
-        console.log('  音乐系统：HTML5 Audio（替换 src 即可使用自己的音乐）');
-        console.log('  英文字体：VT323（等宽像素风格）');
-    </script>
+    // ==================== Vue 3 应用 ====================
+    const vueApp = Vue.createApp({
+        data() {
+            return {
+                visible: false,
+                currentTab: 1,
+                tabs: [
+                    { id: 1, name: '关于我' },
+                    { id: 2, name: '项目作品' },
+                    { id: 3, name: '技能领域' },
+                    { id: 4, name: '联系方式' },
+                ],
+                projects: [
+                    {
+                        id: 1,
+                        title: '智能图像生成器',
+                        desc: '基于扩散模型的AI图像生成工具，支持文本到图像、图像到图像的转换。提供直观的Web界面，支持批量处理和实时预览。',
+                        techs: ['Python', 'PyTorch', 'FastAPI', 'Vue.js', 'Docker'],
+                    },
+                    {
+                        id: 2,
+                        title: '个人知识管理系统',
+                        desc: '一个以图谱为核心的知识管理平台，支持Markdown笔记、双向链接和可视化知识网络。',
+                        techs: ['TypeScript', 'React', 'Neo4j', 'Node.js', 'GraphQL'],
+                    },
+                    {
+                        id: 3,
+                        title: '3D场景编辑器',
+                        desc: '基于Three.js的在线3D场景编辑工具，支持模型导入、材质编辑和光照调整，导出为GLB格式。',
+                        techs: ['Three.js', 'WebGL', 'Vue 3', 'Blender API'],
+                    },
+                    {
+                        id: 4,
+                        title: '实时协作白板',
+                        desc: '支持多人实时协作的在线白板应用，具备画笔、图形、文本和便签等工具，使用WebSocket同步。',
+                        techs: ['Canvas API', 'WebSocket', 'Express', 'Redis', 'Svelte'],
+                    },
+                ],
+                skillGroups: [
+                    {
+                        category: '前端开发',
+                        description: '构建响应式、高性能的用户界面，注重交互体验与视觉细节。',
+                        skills: ['HTML/CSS', 'JavaScript', 'Vue 3', 'React', 'Three.js', 'Tailwind CSS', 'GSAP'],
+                    },
+                    {
+                        category: '后端与AI',
+                        description: '设计可扩展的服务架构，并将AI模型部署为可用API。',
+                        skills: ['Python', 'Node.js', 'FastAPI', 'PyTorch', 'LangChain', 'Docker', 'RESTful API'],
+                    },
+                    {
+                        category: '工具与设计',
+                        description: '使用现代工具链提升开发效率与设计品质。',
+                        skills: ['Figma', 'Git', 'Linux', 'Vite', 'Webpack', 'CI/CD', 'Blender'],
+                    },
+                ],
+                contacts: [
+                    { label: '电子邮箱', value: 'luhe@example.com', link: 'mailto:luhe@example.com' },
+                    { label: 'GitHub', value: 'github.com/luhe-miao', link: 'https://github.com' },
+                    { label: '微信', value: 'LuHe_Miao', link: null },
+                    { label: '所在地', value: '中国 · 石家庄', link: null },
+                ],
+            };
+        },
+        computed: {
+            currentTabData() {
+                return this.tabs.find(t => t.id === this.currentTab) || this.tabs[0];
+            },
+            totalSkillCount() {
+                return this.skillGroups.reduce((sum, group) => sum + group.skills.length, 0);
+            },
+        },
+        methods: {
+            show() {
+                this.visible = true;
+                // 同步外部dash状态
+                updateDashActive(this.currentTab);
+                document.body.style.overflow = 'hidden';
+            },
+            hide() {
+                this.visible = false;
+                document.body.style.overflow = '';
+            },
+            closeOverlay() {
+                closeVueOverlay();
+            },
+            goToTab(id) {
+                this.currentTab = id;
+                // 同步外部dash状态
+                updateDashActive(id);
+            },
+        },
+        watch: {
+            currentTab(newVal) {
+                // 当Vue内部tab变化时，同步外部dash
+                updateDashActive(newVal);
+            },
+            visible(newVal) {
+                if (!newVal) {
+                    // Vue区域关闭后，确保body overflow恢复
+                    document.body.style.overflow = '';
+                }
+            },
+        },
+        mounted() {
+            console.log('🟢 Vue 3 应用已挂载，等待"向右滑动进入"触发...');
+        },
+    });
+
+    // 挂载Vue应用并暴露到全局
+    const vueInstance = vueApp.mount('#vue-app');
+    window.vueApp = vueInstance;
+
+    console.log('🖤 LuHe / miao~ 主页已就绪');
+    console.log('  初始状态：仅显示背景（粒子/网格/暗角）');
+    console.log('  页面加载后显示欢迎覆盖层（"别来无恙啊"）');
+    console.log('  点击"进入主页"后：覆盖层淡出，所有UI元素淡入');
+    console.log('  点击"向右滑动进入"或滑动 → 遮罩动画 → Vue全屏区域打开');
+    console.log('  Vue区域：4个场景面板 · 左侧导航 · 右侧内容');
+    console.log('  右上角 · 音乐控制器 | 页面导航（与Vue内部联动）');
+    console.log('  右下角 · 个人信息卡（PROFILE）');
+    console.log('  快捷键：空格=播放/暂停 | ↑↓=音量 | ←→=切换场景 | ESC=关闭Vue区域');
+    console.log('  音乐系统：HTML5 Audio（替换 src 即可使用自己的音乐）');
+    console.log('  英文字体：VT323（等宽像素风格）');
+    console.log('  Vue 3 驱动的内容面板 · 响应式数据 · 过渡动画');
+</script>
 </body>
 </html>
