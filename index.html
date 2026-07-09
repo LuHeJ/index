@@ -51,6 +51,37 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* ==================== 双图融合背景 ==================== */
+        .bg-images {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .bg-images .bg-left {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('g1.jpg') center/cover no-repeat;
+            background-size: cover;
+            background-position: 100% center;
+            /* 左图：cover铺满无黑边，右对齐 */
+            clip-path: polygon(0 0, 62% 0, 38% 100%, 0 100%);
+            filter: brightness(0.35) saturate(0.5);
+        }
+        .bg-images .bg-right {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('g2.jpg') center/cover no-repeat;
+            background-size: 120%;
+            background-position: 40% center;
+            /* 右图，放大裁剪掉右下角水印，1px 缝隙 */
+            clip-path: polygon(calc(62% + 1px) 0, 100% 0, 100% 100%, calc(38% + 1px) 100%);
+            filter: brightness(0.35) saturate(0.5);
+        }
+
         /* ==================== 背景画布 ==================== */
         #particle-canvas {
             position: fixed;
@@ -825,7 +856,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(6, 2, 2, 0.92);
+            background:
+                linear-gradient(rgba(8, 3, 3, 0.72), rgba(6, 2, 2, 0.78)),
+                url('g3.jpg') center/cover no-repeat;
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
             display: flex;
@@ -919,6 +952,51 @@
             background: #f5c0c0;
         }
 
+        /* 侧边栏中段装饰分隔 */
+        .vue-sidebar-divider {
+            margin: 8px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .vue-sidebar-divider .divider-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(140, 40, 40, 0.2);
+        }
+        .vue-sidebar-divider .divider-dot {
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            background: rgba(180, 60, 60, 0.35);
+            flex-shrink: 0;
+        }
+
+        /* 侧边栏底部装饰 */
+        .vue-sidebar-footer {
+            margin-top: auto;
+            padding: 18px 20px 12px;
+            border-top: 1px solid rgba(140, 40, 40, 0.25);
+            text-align: center;
+        }
+        .vue-sidebar-footer .footer-dot-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .vue-sidebar-footer .footer-dot-row span {
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            background: rgba(180, 60, 60, 0.5);
+            display: inline-block;
+        }
+        .vue-sidebar-footer .footer-quote {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: rgba(200, 140, 140, 0.4);
+            line-height: 1.6;
+        }
+
         /* 右侧内容区 */
         .vue-content-area {
             flex: 1;
@@ -927,6 +1005,26 @@
             flex-direction: column;
             overflow: hidden;
             position: relative;
+        }
+        .vue-content-area::before {
+            content: '';
+            position: absolute;
+            top: 16px; right: 16px;
+            width: 50px; height: 50px;
+            border-top: 1px solid rgba(180, 50, 50, 0.2);
+            border-right: 1px solid rgba(180, 50, 50, 0.2);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .vue-content-area::after {
+            content: '';
+            position: absolute;
+            bottom: 16px; left: 16px;
+            width: 50px; height: 50px;
+            border-bottom: 1px solid rgba(180, 50, 50, 0.2);
+            border-left: 1px solid rgba(180, 50, 50, 0.2);
+            pointer-events: none;
+            z-index: 0;
         }
         .vue-content-topbar {
             display: flex;
@@ -941,6 +1039,17 @@
             letter-spacing: 3px;
             color: #f0d8d8;
             text-shadow: 0 0 8px rgba(200, 60, 60, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .vue-content-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px; height: 16px;
+            background: #c84040;
+            border-radius: 2px;
+            box-shadow: 0 0 6px rgba(200, 60, 60, 0.5);
         }
         .vue-close-btn {
             width: 38px;
@@ -975,6 +1084,9 @@
             overflow-y: auto;
             padding: 28px 32px;
             scroll-behavior: smooth;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(180, 50, 50, 0.04) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(180, 50, 50, 0.03) 0%, transparent 50%);
         }
         .vue-content-scroll::-webkit-scrollbar {
             width: 5px;
@@ -1488,6 +1600,12 @@
     <!-- 背景音乐 -->
     <audio id="bgAudio" src="BGM1.mp3" loop preload="auto"></audio>
 
+    <!-- 双图融合背景 -->
+    <div class="bg-images">
+        <div class="bg-left"></div>
+        <div class="bg-right"></div>
+    </div>
+
     <!-- 粒子背景画布 -->
     <canvas id="particle-canvas"></canvas>
 
@@ -1525,7 +1643,7 @@
     <div class="welcome-area overlay-active" id="welcomeArea">
         <div class="welcome-text">欢迎宾至，鹿禾的主页。</div>
         <button class="enter-btn" id="enterBtn">
-            <span>向右滑动进入</span>
+            <span>详情主页→</span>
             <span class="arrow">→</span>
         </button>
         <div class="enter-hint">SLIDE RIGHT TO ENTER</div>
@@ -1548,7 +1666,7 @@
 
     <!-- 底部状态栏 -->
     <div class="status-bar overlay-active">
-        <span>SCENCE 01 主 IDLE LOOP</span>
+        <span>SCENCE 01 · 主页面</span>
         <div class="progress-track">
             <div class="progress-fill"></div>
         </div>
@@ -1588,6 +1706,19 @@
                         <div v-for="tab in tabs" :key="tab.id" class="vue-nav-item" :class="{ active: currentTab === tab.id }" @click="goToTab(tab.id)" :title="tab.name">
                             <span class="vue-nav-dot"></span>
                             <span>{{ tab.name }}</span>
+                        </div>
+                        <div class="vue-sidebar-divider">
+                            <span class="divider-dot"></span>
+                            <span class="divider-line"></span>
+                            <span class="divider-dot"></span>
+                            <span class="divider-line"></span>
+                            <span class="divider-dot"></span>
+                        </div>
+                        <div class="vue-sidebar-footer">
+                            <div class="footer-dot-row">
+                                <span></span><span></span><span></span><span></span><span></span>
+                            </div>
+                            <div class="footer-quote">CODE · CREATE · REPEAT</div>
                         </div>
                     </nav>
 
@@ -1644,6 +1775,42 @@
                                     </div>
 
                                     <div class="vue-card">
+                                        <div class="vue-card-title">项目经历</div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-time">2024.01 - 至今</div>
+                                            <div class="timeline-title">个人品牌主页 · 独立开发</div>
+                                            <div class="timeline-desc">
+                                                独立设计并开发响应式个人主页，融合 Canvas 粒子动画、Vue 3 动态路由、毛玻璃 UI 等交互效果，
+                                                完整展示个人技术栈与审美风格，作为求职与技术交流的名片。
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-time">2023.09 - 2023.12</div>
+                                            <div class="timeline-title">校园二手交易小程序 · 核心开发</div>
+                                            <div class="timeline-desc">
+                                                使用微信小程序原生框架 + 云开发，实现商品发布、搜索筛选、在线聊天、订单管理等核心功能。
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="vue-card">
+                                        <div class="vue-card-title">兴趣爱好</div>
+                                        <div class="vue-tag-row">
+                                            <span class="vue-tag">🎮 游戏</span>
+                                            <span class="vue-tag">🎀 二次元</span>
+                                            <span class="vue-tag">🎵 音乐</span>
+                                            <span class="vue-tag">📷 摄影</span>
+                                            <span class="vue-tag">🎬 剪辑</span>
+                                            <span class="vue-tag">🎸 吉他</span>
+                                            <span class="vue-tag">☕ 咖啡</span>
+                                            <span class="vue-tag">🍸 鸡尾酒</span>
+                                            <span class="vue-tag">🌧️ 淋雨</span>
+                                            <span class="vue-tag">✈️ 旅游</span>
+                                            <span class="vue-tag">···</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="vue-card">
                                         <div class="vue-card-title">个人理念</div>
                                         <div class="vue-card-desc" style="font-size:16px;color:#f0d8d8;">
                                             "技术是工具，创意是内核，做能解决实际问题的创造者。"
@@ -1660,6 +1827,31 @@
                                             <span class="vue-tag" v-for="skill in skillGroup.skills" :key="skill">{{ skill }}</span>
                                         </div>
                                     </div>
+                                    <div class="vue-card">
+                                        <div class="vue-card-title">常用工具</div>
+                                        <div class="vue-tag-row">
+                                            <span class="vue-tag">VS Code</span>
+                                            <span class="vue-tag">Git</span>
+                                            <span class="vue-tag">Figma</span>
+                                            <span class="vue-tag">Postman</span>
+                                            <span class="vue-tag">Claude AI</span>
+                                            <span class="vue-tag">ChatGPT</span>
+                                            <span class="vue-tag">Photoshop</span>
+                                            <span class="vue-tag">剪映</span>
+                                        </div>
+                                    </div>
+                                    <div class="vue-card">
+                                        <div class="vue-card-title">正在学习</div>
+                                        <div class="vue-card-desc">
+                                            深入探索 TypeScript 类型系统、Next.js 全栈框架、Three.js 3D 可视化，
+                                            持续拓展技术视野与实战能力。
+                                        </div>
+                                        <div class="vue-tag-row">
+                                            <span class="vue-tag">TypeScript</span>
+                                            <span class="vue-tag">Next.js</span>
+                                            <span class="vue-tag">Three.js</span>
+                                        </div>
+                                    </div>
                                     <div class="vue-card" style="text-align:center;">
                                         <div class="vue-highlight-num">{{ totalSkillCount }}+</div>
                                         <div class="vue-card-desc" style="margin-top:4px;">技能标签总数 · 持续学习迭代中</div>
@@ -1673,6 +1865,27 @@
                                         <div class="vue-card-desc">
                                             <a v-if="contact.link" :href="contact.link" target="_blank" class="vue-link">{{ contact.value }}</a>
                                             <span v-else>{{ contact.value }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="vue-card">
+                                        <div class="vue-card-title">社交媒体</div>
+                                        <div class="vue-card-desc">
+                                            更多动态与作品持续更新中，欢迎关注与交流。
+                                        </div>
+                                        <div class="vue-tag-row">
+                                            <span class="vue-tag">GitHub</span>
+                                            <span class="vue-tag">掘金</span>
+                                            <span class="vue-tag">CSDN</span>
+                                            <span class="vue-tag">B站</span>
+                                            <span class="vue-tag">抖音</span>
+                                        </div>
+                                    </div>
+                                    <div class="vue-card">
+                                        <div class="vue-card-title">在线时间</div>
+                                        <div class="vue-card-desc">
+                                            工作日 19:00 - 23:00 在线<br />
+                                            周末全天可沟通<br />
+                                            紧急事务请邮件联系，24小时内回复。
                                         </div>
                                     </div>
                                     <div class="vue-card">
@@ -1699,16 +1912,6 @@
                                                 <span><strong>电子邮箱</strong>2743591998@qq.com</span>
                                                 <span><strong>GitHub</strong>github.com/LuHeJ/index.git</span>
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- 求职意向 -->
-                                    <div class="vue-card">
-                                        <div class="resume-section-title">求职意向</div>
-                                        <div class="vue-card-desc">
-                                            期望岗位：Web前端开发 / 全栈开发 / AI应用开发<br />
-                                            期望城市：石家庄 / 远程 / 可接受短期出差<br />
-                                            到岗时间：随时到岗
                                         </div>
                                     </div>
 
@@ -1794,6 +1997,26 @@
                                         </div>
                                     </div>
 
+                                    <!-- 项目经验 -->
+                                    <div class="vue-card">
+                                        <div class="resume-section-title">项目经验</div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-time">2024.01 - 至今</div>
+                                            <div class="timeline-title">个人品牌主页 · 独立开发</div>
+                                            <div class="timeline-desc">
+                                                独立设计并开发响应式个人主页，融合 Canvas 粒子动画、Vue 3 动态路由、毛玻璃 UI 等交互效果，
+                                                完整展示个人技术栈与审美风格，作为求职与技术交流的名片。
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-time">2023.09 - 2023.12</div>
+                                            <div class="timeline-title">校园二手交易小程序 · 核心开发</div>
+                                            <div class="timeline-desc">
+                                                使用微信小程序原生框架 + 云开发，实现商品发布、搜索筛选、在线聊天、订单管理等核心功能。
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- 自我评价 -->
                                     <div class="vue-card">
                                         <div class="resume-section-title">自我评价</div>
@@ -1805,6 +2028,7 @@
                                         </div>
                                     </div>
                                 </div>
+
                             </transition>
                         </div>
                     </div>
@@ -1988,7 +2212,7 @@
             currentPage = pageNum;
             const statusSpan = document.querySelector('.status-bar span');
             if (statusSpan) {
-                statusSpan.textContent = `SCENCE ${String(currentPage).padStart(2, '0')} 主 IDLE LOOP`;
+                statusSpan.textContent = `SCENCE ${String(currentPage).padStart(2, '0')} · 主页面`;
             }
         }
 
@@ -2101,9 +2325,6 @@
         function enterSite() {
             if (window.vueApp && window.vueApp.visible) return;
             if (slideMask) slideMask.classList.add('active');
-            if (bgAudio && bgAudio.paused) {
-                bgAudio.play().then(updateMusicBtnUI).catch(() => {});
-            }
             setTimeout(() => {
                 if (window.vueApp) {
                     window.vueApp.show();
@@ -2206,13 +2427,18 @@
                             },
                             {
                                 category: 'AI增效',
-                                description: '熟练运用主流AI工具提升开发与创作效率，可落地自动化工作流。',
-                                skills: ['AI图像生成', 'AI文案优化', '自动化脚本', '批量处理', '提示词工程', 'AI工具二次开发'],
+                                description: '熟练运用主流AI工具与模型提升开发创作效率，可落地自动化工作流。',
+                                skills: ['AI图像生成', 'AI文案优化', '自动化脚本', '批量处理', '提示词工程', 'AI工具二次开发', 'AI Agent', 'Claude', 'Codex'],
                             },
                             {
                                 category: '视频剪辑',
                                 description: '可独立完成产品宣传、项目演示等场景的视频制作。',
                                 skills: ['剪映专业版', '卡点剪辑', '字幕制作', '转场动效', '宣传短片', '演示视频'],
+                            },
+                            {
+                                category: '音乐创作',
+                                description: '热爱吉他演奏与音乐制作，具备编曲、录音、混音等音频创作能力。',
+                                skills: ['指弹吉他', '电吉他', '编曲', '混音', '作曲', '录音'],
                             },
                         ],
                         contacts: [
