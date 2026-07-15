@@ -10,11 +10,33 @@
 @import "tailwindcss";
 
 /* ===== 液态玻璃效果 =====
-   核心技术：backdrop-filter blur + 伪元素渐变边框
-   - 背景设为近乎透明 (rgba 0.01)，配合 luminosity 混合模式
-   - ::before 伪元素通过 mask-composite: exclude 在容器内侧绘制
-     极细的渐变边框环（1.4px），模拟玻璃厚度的高光边缘
-   - 暗色模式 (.dark) 下切换为深蓝调边框，匹配 Deep Woods 视频氛围
+   [代码作用] .liquid-glass 是整个 Lumora UI 的核心视觉元素 —
+             导航 pill、badge、邮箱输入框都使用了这个效果。
+
+   [怎么做] 三层技术组合实现：
+     第 1 层 — backdrop-filter: blur(4px)
+       对元素后方内容做 4px 高斯模糊。这是毛玻璃的核心。
+       数值越小玻璃越"清楚"（4px < 常见 10-20px），
+       因为我们只需要微妙的模糊而非完全遮挡。
+
+     第 2 层 — background-blend-mode: luminosity
+       将近乎透明的背景 (rgba 0.01) 与下方模糊内容混合。
+       luminosity 模式保留下方内容的亮度信息，丢弃其色彩，
+       让玻璃呈现"保留了形状但去除了颜色"的效果。
+
+     第 3 层 — ::before 渐变边框环（最关键的一步）
+       在元素内侧 1.4px 处绘制一个环形渐变：
+         - 顶部和底部：白色半透明 → 模拟光源在上下方的玻璃高光
+         - 中间：完全透明 → 模拟玻璃的透明特性
+       使用 mask-composite: exclude 将渐变裁剪为仅边框区域可见。
+       1.4px 是精心选择的值 — 刚好可见但不过分，
+       比 1px 更有"厚度感"，比 2px 更精致。
+
+   [为什么] 不用简单的 border + border-radius：
+     - border 是单一颜色，无法实现渐变
+     - box-shadow inset 可以模拟高光但无法精确控制位置
+     - 伪元素 + mask 组合是纯 CSS 实现玻璃边框的最优雅方案，
+       不需要额外 DOM 或 JavaScript
    ============================================================ */
 .liquid-glass {
   background: rgba(255, 255, 255, 0.01);

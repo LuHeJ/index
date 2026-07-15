@@ -23,9 +23,15 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- [页面标题] 作用: 浏览器标签页显示的名称，SEO 和书签收藏时使用 -->
     <title>LuHe / 个人主页</title>
 
     
+    <!--
+      [字体预连接] 作用: 提前建立与 Google Fonts 服务器的连接。
+      怎么做: preconnect 提示浏览器在解析 CSS 之前就完成 DNS + TCP + TLS 握手。
+      为什么: VT323 字体在 CSS 中声明后才会被发现，预连接可节省约 100-300ms 的加载时间。
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
@@ -74,8 +80,17 @@
 
         
         /* ===== 双图融合背景 (z-0) =====
-           使用 clip-path 对角线分割两张背景图，
-           右图放大 120% 裁剪掉右下角水印 */
+   [作用] 将两张人物/风景照片以对角线方式融合为全屏背景。
+   [怎么做] 利用 CSS clip-path: polygon() 绘制对角线裁剪区域：
+           左图占据 0%→62% 到 0%→38% 的梯形区域，
+           右图占据 62%→100% 到 38%→100% 的梯形区域。
+           两者中间留 1px 缝隙（calc(62% + 1px)）形成微妙的视觉分割线。
+   [为什么] 不使用简单的左右并排：
+     - 对角线比垂直线更有设计感和动感
+     - 两张图融合成一体，而非割裂的两栏
+     - 62:38 的黄金比例分割比 50:50 更具美感
+     - 右图 background-size: 120% 放大裁剪掉右下角水印
+   ============================================================ */
         .bg-images {
             position: fixed;
             top: 0; left: 0;
@@ -107,7 +122,12 @@
         }
 
         
-        /* ===== 粒子动画画布 (z-1) ===== */
+        /* ===== 粒子动画画布 (z-1) =====
+   [作用] 提供 HTML5 Canvas 元素作为粒子系统的绘制表面。
+   [怎么做] fixed 定位铺满全屏，pointer-events: none 使鼠标事件穿透到下层 UI。
+   [为什么] pointer-events: none 是关键 — Canvas 覆盖在所有 UI 之上，
+           若不穿透则所有按钮、链接都无法点击。粒子纯装饰，不应阻挡交互。
+   ============================================================ */
         #particle-canvas {
             position: fixed;
             top: 0;
@@ -118,7 +138,14 @@
             pointer-events: none;
         }
 
-        /* ===== 暗角遮罩 (z-2) ===== */
+        /* ===== 暗角遮罩 (z-2) =====
+   [作用] 通过径向渐变在画面四角和边缘叠加暗色，模仿摄影中的暗角(vignette)效果。
+   [怎么做] 两层 radial-gradient：
+           - 右上角暖色光晕 (rgba(80,20,20,0.25) -> transparent)
+           - 中心向边缘的暗色过渡 (transparent -> rgba(0,0,0,0.7))
+   [为什么] 暗角能将视线引导至画面中央，同时柔化背景边缘，
+           让固定位置的 UI 元素（四周）有更好的对比度。
+   ============================================================ */
         .vignette {
             position: fixed;
             top: 0;
@@ -132,7 +159,13 @@
                 radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
         }
 
-        /* ===== 网格纹理背景 (z-1) ===== */
+        /* ===== 网格纹理背景 (z-1) =====
+   [作用] 叠加一层 60px 间距的网格线，增加科技感和空间深度。
+   [怎么做] 使用 CSS background-image 分别绘制水平和垂直的 1px 半透明线。
+           两条 linear-gradient 叠加形成十字网格。
+   [为什么] 纯色背景过于平面，网格纹理以极低成本（纯 CSS，零 JS）
+           增加了视觉层次和科技氛围，且不消耗额外 HTTP 请求。
+   ============================================================ */
         .grid-bg {
             position: fixed;
             top: 0;
@@ -148,7 +181,13 @@
         }
 
         
-        /* ===== 左上角 Logo 组件 ===== */
+        /* ===== 左上角 Logo 组件 =====
+   [作用] 固定于左上角的品牌标识：红点 + LuHe / 个人主页。
+   [怎么做] flex 布局水平排列 dot + luhe + slash + miaow 四个 span。
+           dot 使用 border-radius: 50% 变圆 + box-shadow 发光 + 脉动动画。
+   [为什么] 放在左上角符合用户视觉扫描习惯（F 型阅读模式），
+           红色发光点提供品牌记忆点，overlay-active 类与欢迎覆盖层联动隐藏。
+   ============================================================ */
         .logo {
             position: fixed;
             top: 32px;
@@ -178,6 +217,10 @@
             box-shadow: 0 0 8px #c83c3c, 0 0 16px rgba(200, 50, 50, 0.4);
             animation: dotPulse 2.5s ease-in-out infinite;
         }
+        /* [红点脉动动画] 作用: 让 Logo 前的红点以 2.5s 周期呼吸式脉动。
+           怎么做: 通过 box-shadow 在强弱之间循环过渡。
+           为什么: 脉动暗示"活着"和"在线"，给品牌注入生命力。
+           2.5s 比常见 1-2s 略慢，显得更沉稳不急促。 */
         @keyframes dotPulse {
             0%,
             100% {
@@ -228,7 +271,16 @@
 
         
         /* ===== 音乐控制器 (毛玻璃胶囊) =====
-           包含播放按钮 + 音量滑块 */
+   [作用] 右上角的背景音乐播放/暂停 + 音量调节控件。
+   [怎么做] 毛玻璃胶囊容器（backdrop-filter: blur(14px)）内含：
+           - 圆形播放按钮（34px，带 pulse 动画）
+           - range 音量滑块（自定义 webkit 样式匹配红色主题）
+   [为什么] 放在右上角不干扰主要内容区域，毛玻璃效果与整体 UI 风格统一。
+           使用原生 <input type="range"> 而非自定义 slider 因为：
+             - 无障碍（屏幕阅读器原生支持）
+             - 键盘操作（方向键调节）
+             - 移动端 touch 事件原生支持
+   ============================================================ */
         .music-controller {
             display: flex;
             align-items: center;
@@ -290,6 +342,9 @@
             box-shadow: 0 0 16px rgba(200, 45, 45, 0.5), 0 0 32px rgba(180, 30, 30, 0.25);
             background: linear-gradient(135deg, rgba(140, 30, 30, 0.65) 0%, rgba(90, 18, 18, 0.75) 100%);
         }
+        /* [播放中脉动动画] 作用: 播放时按钮红色外发光以 2.4s 周期呼吸。
+           为什么: 视觉反馈让用户明确知道音乐正在播放，
+           即使静音或音量极低也能通过 UI 识别播放状态。 */
         @keyframes musicPulse {
             0%,
             100% {
@@ -311,6 +366,9 @@
         .music-play-btn.playing .note-icon {
             animation: noteBounce 0.9s ease-in-out infinite;
         }
+        /* [音符跳动动画] 作用: 播放时音符图标 ♪ 以 0.9s 周期轻微弹跳。
+           怎么做: translateY 在 0→-4px→1px 之间循环，配合 scale 缩放。
+           为什么: 模拟音符在五线谱上跳动的感觉，增强拟物趣味性。 */
         @keyframes noteBounce {
             0%,
             100% {
@@ -382,7 +440,12 @@
         }
 
         
-        /* ===== 左下角欢迎区 ===== */
+        /* ===== 左下角欢迎区 =====
+   [作用] 左下角的欢迎文字 + "详情主页→"按钮 + SLIDE RIGHT TO ENTER 提示。
+   [怎么做] fixed 定位在左下角，enter-btn 包含 ::before 扫光伪元素。
+   [为什么] 右下角已被个人信息卡占据，左下角是最佳放置 CTA 按钮的位置，
+           与左上角 Logo 形成对角线平衡。
+   ============================================================ */
         .welcome-area {
             position: fixed;
             bottom: 80px;
@@ -483,7 +546,13 @@
 
         
         /* ===== 右下角个人信息卡 =====
-           毛玻璃卡片，展示 PROFILE / 姓名 / 位置 / 方向 */
+   [作用] 右下角毛玻璃卡片展示个人信息：PROFILE 标签、姓名 LuHe、
+          个人描述、LOCATION、ORIENTATION。
+   [怎么做] fixed 定位在右下角，backdrop-filter: blur(18px) 实现毛玻璃，
+           多层 box-shadow 营造深度和顶部内发光。
+   [为什么] 毛玻璃效果让卡片与背景融为一体而非生硬悬浮，
+           blur(18px) 比音乐控制器的 14px 更大，因为卡片面积更大需要更强模糊。
+   ============================================================ */
         .profile-card {
             position: fixed;
             bottom: 115px;
@@ -580,7 +649,12 @@
 
         
         /* ===== 底部状态栏 =====
-           横跨底部的进度条 + 场景标签 */
+   [作用] 横跨底部的场景标签 (SCENCE 01) + 呼吸式进度条。
+   [怎么做] flex 布局：左侧文字 + 中间 flex:1 进度条。
+           进度条填充使用 pulseGlow 动画制造呼吸发光效果。
+   [为什么] 进度条让底部不空旷，呼吸动画让页面有"活着"的感觉，
+           3s 周期足够缓慢不分散注意力。
+   ============================================================ */
         .status-bar {
             position: fixed;
             bottom: 16px;
@@ -620,6 +694,8 @@
             border-radius: 2px;
             animation: pulseGlow 3s ease-in-out infinite;
         }
+        /* [进度条呼吸动画] 作用: 底部进度条以 3s 周期在 50% 和 100% 透明度间呼吸。
+           为什么: 模拟系统待机状态，暗示"一切正常运转中"。 */
         @keyframes pulseGlow {
             0%,
             100% {
@@ -701,7 +777,15 @@
 
         
         /* ===== 滑动过渡遮罩 (z-100) =====
-           从左侧滑入的深色遮罩，800ms 过渡 */
+   [作用] 点击"向右滑动进入"后，一块深色遮罩从左侧滑入覆盖全屏，
+          遮罩完全覆盖后（800ms）才显示 Vue 内容区域。
+   [怎么做] fixed 定位 left: -100%（初始隐藏在左侧），
+           .active 时 left: 0，通过 transition: left 0.8s 产生滑动效果。
+   [为什么] 这个遮罩起到"幕布"作用：
+     - 视觉上创造从主页→详情页的过渡感
+     - 掩盖 Vue 挂载和渲染的瞬间（可能有短暂的空白/闪烁）
+     - 800ms 与 CSS cubic-bezier(0.7,0,0.3,1) 配合创造"加速滑入"的感觉
+   ============================================================ */
         .slide-mask {
             position: fixed;
             top: 0;
@@ -775,6 +859,8 @@
         .welcome-overlay.visible .welcome-title {
             animation: titleFloat 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
+        /* [标题浮动入场] 作用: 标题从下方 18px 处淡入上浮到原位。
+           为什么: 0.9s 的动画时间 + 从下往上的方向模拟"升起/展现"的感觉。 */
         @keyframes titleFloat {
             from {
                 transform: translateY(18px);
@@ -806,6 +892,8 @@
         .welcome-overlay.visible .welcome-enter-btn {
             animation: btnReveal 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.25s forwards;
         }
+        /* [按钮延迟入场] 作用: 按钮比标题晚 0.25s 从下方淡入。
+           为什么: 延迟制造层次感，先看标题再看到按钮，引导阅读顺序。 */
         @keyframes btnReveal {
             from {
                 transform: translateY(20px);
@@ -866,6 +954,8 @@
         .welcome-overlay.visible .welcome-subtle {
             animation: subtleReveal 1.2s ease 0.5s forwards;
         }
+        /* [底部文字淡入] 作用: 欢迎覆盖层底部的 "WELCOME" 文字在 1.2s 后缓慢淡入。
+           为什么: 最后出现的元素给整个入场序列画上句号。 */
         @keyframes subtleReveal {
             from {
                 opacity: 0;
@@ -877,10 +967,17 @@
 
         
         /* ============================================================
-           Vue 3 全屏覆盖层系统 (z-200)
-           左侧导航栏 (220px) + 右侧内容区 (flex: 1)
-           面板切换使用 panel-fade 过渡动画
-           ============================================================ */
+   Vue 3 全屏覆盖层系统 (z-200)
+   [作用] 滑动进入后显示的全屏 SPA 界面，包含左侧导航 + 右侧内容。
+   [怎么做] fixed 定位 z-index:200 覆盖所有元素。
+           内部使用 flex 布局：左侧 220px 固定宽度导航栏 + 右侧弹性内容区。
+           导航使用 v-for 渲染 + :class 绑定 active 状态。
+           内容区使用 <transition name="panel-fade"> 实现面板切换动画。
+   [为什么] 采用全屏覆盖而非页面跳转：
+     - 无需额外 HTTP 请求，切换即时
+     - 粒子动画和背景音乐不中断
+     - Vue 3 响应式数据驱动，UI 自动更新
+   ============================================================ */
         .vue-overlay-root {
             position: fixed;
             top: 0;
@@ -910,7 +1007,12 @@
         }
 
         
-        /* --- Vue 主容器 --- */
+        /* --- Vue 主容器 ---
+   [作用] 覆盖层的实际内容容器，深色半透明背景 + 毛玻璃模糊。
+   [怎么做] 使用 g3.jpg 作为背景图叠加半透明深色渐变，
+           backdrop-filter: blur(18px) 模糊下层内容。
+   [为什么] 背景图 + 毛玻璃比纯色背景更有层次和质感，
+           18px blur 确保下层粒子动画不会干扰内容阅读。 */
         .vue-main-overlay {
             position: absolute;
             top: 0;
@@ -928,7 +1030,12 @@
         }
 
         
-        /* --- 左侧导航栏 --- */
+        /* --- 左侧导航栏 ---
+   [作用] 220px 宽的垂直导航，包含标题区 + 4 个导航项 + 底部分隔线 + 页脚。
+   [怎么做] flex-direction: column 垂直排列，每个导航项使用 flex 行布局。
+           激活项通过 .active 类触发：红色背景 + 红色左边框 + 发光文字。
+   [为什么] 220px 宽度经过权衡：够放下中文导航文字（4-5字），
+           又不过宽挤压右侧内容空间。固定宽度而非百分比是为了视觉稳定。 */
         .vue-sidebar {
             width: 220px;
             min-width: 220px;
@@ -1184,7 +1291,12 @@
         }
 
         
-        /* --- 内容卡片 --- */
+        /* --- 内容卡片 ---
+   [作用] 统一的毛玻璃内容卡片，用于展示各类信息块。
+   [怎么做] 暗红半透明背景 + 红色边框 + border-radius: 12px。
+           hover 时边框加亮 + 上浮 2px + 增强阴影，创造交互深度感。
+   [为什么] 统一卡片样式减少视觉噪音，用户能快速识别"这是一个信息块"。
+           hover 效果提供可交互的暗示，即使卡片本身不可点击。 */
         .vue-card {
             background: rgba(25, 8, 8, 0.5);
             border: 1px solid rgba(140, 35, 35, 0.3);
@@ -1256,7 +1368,11 @@
             text-shadow: 0 0 10px rgba(220, 80, 80, 0.5);
         }
 
-        /* --- 时间线条目 (用于经历/项目展示) --- */
+        /* --- 时间线条目 (用于经历/项目展示) ---
+   [作用] 左侧竖线 + 圆点的垂直时间线组件，展示教育/工作/项目经历。
+   [怎么做] border-left + ::before 圆点伪元素。
+   [为什么] 时间线是最直观的经历展示方式，用户从上到下扫描即可理解时间顺序。
+           圆点使用 box-shadow 发光增加质感，匹配主题。 */
         .timeline-item {
             position: relative;
             padding-left: 20px;
@@ -1297,7 +1413,11 @@
         }
 
         
-        /* --- 简历专属样式 --- */
+        /* --- 简历专属样式 ---
+   [作用] 简历页面的头部区域：姓名 + 职位 + 联系方式网格。
+   [怎么做] flex 布局，左侧姓名块 + 右侧 2 列联系方式网格。
+   [为什么] 简历头部需要在一屏内呈现姓名和关键联系信息，
+           双列网格比列表更节省垂直空间。 */
         .resume-header {
             display: flex;
             justify-content: space-between;
@@ -1376,7 +1496,15 @@
         }
 
         
-        /* ===== 响应式：平板 (<=768px) ===== */
+        /* ===== 响应式：平板 (<=768px) =====
+   [作用] 在屏幕宽度 ≤768px 时调整布局，适配 iPad 竖屏和大型手机。
+   [怎么做] 修改 Vue sidebar 从垂直变为水平（flex-direction: row + flex-wrap），
+           缩小字体和间距，隐藏不必要的装饰元素（sidebar-header、active 竖线）。
+   [为什么] 768px 是常见的平板/手机分界点（iPad 竖屏 768px）：
+     - 垂直 sidebar 在窄屏会挤压内容区至不可用
+     - 改为水平顶部导航释放内容宽度
+     - 减小 padding/margin 增加有效显示面积
+   ============================================================ */
         @media (max-width: 768px) {
             .top-right-panel {
                 top: 14px;
@@ -1557,7 +1685,11 @@
                 font-size: 12px;
             }
         }
-/* ===== 响应式：手机 (<=480px) ===== */
+/* ===== 响应式：手机 (<=480px) =====
+   [作用] 在屏幕宽度 ≤480px 时进一步缩小尺寸，适配手机屏幕。
+   [怎么做] 更小的字体/间距/圆角，更紧凑的卡片 padding。
+   [为什么] 480px 覆盖绝大多数手机（iPhone SE 375px → iPhone 16 Pro Max 430px）。
+           信息卡 min-width 从 350px 降至 200px 避免溢出屏幕。 */
         @media (max-width: 480px) {
             .top-right-panel {
                 top: 8px;
@@ -1668,14 +1800,22 @@
         }
 
         
-        /* ===== 全局：文本选中色 ===== */
+        /* ===== 全局：文本选中色 =====
+   [作用] 自定义用户选中文本时的背景色和文字色。
+   [怎么做] ::selection 伪元素设置 background + color。
+   [为什么] 默认蓝色选中色与红色主题冲突，改为红色半透明保持视觉一致性。 */
         ::selection {
             background: rgba(200, 60, 60, 0.35);
             color: #fff;
         }
 
         
-        /* ===== 全局：键盘焦点指示器 ===== */
+        /* ===== 全局：键盘焦点指示器 =====
+   [作用] 为键盘（Tab 键）导航提供可见的焦点环，满足 WCAG 无障碍标准。
+   [怎么做] :focus-visible 伪类仅在键盘导航时显示 outline，
+           鼠标点击时不显示（避免影响视觉美观）。
+   [为什么] 纯鼠标用户不需要焦点环，但键盘用户（包括视障人士）
+           依赖焦点环来定位当前操作元素。:focus-visible 兼顾两者。 */
         button:focus-visible,
         .vue-nav-item:focus-visible,
         .control-btn:focus-visible,
@@ -1697,7 +1837,14 @@
         }
 
         
-        /* ===== 无障碍：减弱动效 ===== */
+        /* ===== 无障碍：减弱动效 =====
+   [作用] 尊重用户在操作系统中的"减少动态效果"设置。
+   [怎么做] 通过 prefers-reduced-motion 媒体查询检测用户偏好，
+           将所有动画时长设为 0.01ms（几乎瞬间完成），
+           隐藏粒子画布（节省前庭敏感用户的视觉负担）。
+   [为什么] 部分用户（如前庭功能障碍者）对动画敏感，
+           可能导致眩晕。这是 WCAG 2.3.3 标准要求的无障碍措施。
+           粒子动画尤其容易触发不适，因此完全隐藏。 */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
@@ -1714,14 +1861,27 @@
     <audio id="bgAudio" src="BGM1.mp3" loop preload="auto"></audio>
 
     
-    <!-- ===== 背景层 (双图融合) ===== -->
+    <!-- ===== 背景层 (双图融合) =====
+   [作用] 两张背景图以对角线融合为全屏背景。
+   [怎么做] 两个 div (.bg-left / .bg-right) 分别承载左右背景图，
+           通过 CSS clip-path 实现对角线裁剪融合。
+   [为什么] 使用 div + CSS 而非 <img> 标签 + JS：
+     - CSS clip-path 是 GPU 加速的，性能更好
+     - 两个 div 绝对定位叠加，不需要 JS 计算
+     - background-image 支持 cover/position 等灵活控制
+-->
     <div class="bg-images">
         <div class="bg-left"></div>
         <div class="bg-right"></div>
     </div>
 
     
-    <!-- ===== 粒子动画画布 ===== -->
+    <!-- ===== 粒子动画画布 =====
+   [作用] HTML5 Canvas 元素，JS 在其上绘制粒子连线动画。
+   [怎么做] <canvas> 标签创建画布，JS 通过 getContext('2d') 获取 2D 渲染上下文。
+   [为什么] Canvas 2D 而非 WebGL：80 个粒子 + 连线用 Canvas 2D 足够，
+           WebGL 虽更快但 API 复杂度高得多，此处性能远未到瓶颈。
+-->
     <canvas id="particle-canvas"></canvas>
 
     
@@ -2226,7 +2386,12 @@
         }
 
         /**
-         * 初始化粒子数组 — 创建 particleCount 个随机分布的粒子
+         * [代码作用] 初始化粒子数组 — 创建 80 个随机分布的粒子。
+         * [怎么做] 清空数组后用 for 循环 push particleCount 个新 Particle 实例。
+         * [为什么] 单独函数而非内联：
+         *   - 页面加载和窗口 resize 时都需要重新初始化
+         *   - 抽取为函数避免代码重复
+         *   - 80 个粒子是视觉密度与性能的平衡点（移动端也能跑满 60fps）
          */
         function initParticles() {
             particles = [];
@@ -2397,6 +2562,16 @@
         const sideLineEl = document.querySelector('.side-line');
         const profileCardEl = document.getElementById('profileCard');
 
+        /**
+         * [代码作用] allUiElements 数组收集了所有需要在欢迎覆盖层显示时
+         *            同步隐藏的固定 UI 元素。
+         * [怎么做] 将 7 个 DOM 元素引用放入数组，.filter(Boolean) 过滤掉
+         *          可能为 null 的元素（防御性编程）。
+         * [为什么] 使用数组统一管理而非逐个操作：
+         *   - 添加/移除联动元素只需修改数组
+         *   - forEach 批量操作比逐行调用简洁
+         *   - .filter(Boolean) 避免因某个元素缺失导致整体失败
+         */
         const allUiElements = [
             logoEl,
             topRightPanel,

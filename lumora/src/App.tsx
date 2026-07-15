@@ -62,29 +62,79 @@ const OVERLAY_PNG =
  * @returns {JSX.Element} 全屏 section 元素
  */
 export default function App() {
-  /** 当前激活的视频索引（0-3） */
+  /**
+   * [状态] activeVideo — 当前激活的视频索引 (0-3)。
+   * [怎么做] useState(0) 初始化为 Golden Hour（暖色调第一印象）。
+   * [为什么] 用数字索引而非视频对象引用：
+   *   - 方便比较和切换（activeVideo === 2 触发暗色模式）
+   *   - 数组索引天然支持 prev/next 操作
+   */
   const [activeVideo, setActiveVideo] = useState(0);
-  /** 视频切换过渡锁，防止 1000ms 内重复切换 */
+  /**
+   * [状态] isTransitioning — 视频切换冷却锁。
+   * [怎么做] 切换开始时设为 true，1000ms 后恢复 false。
+   * [为什么] 1000ms 与 CSS transition-duration 精确匹配。
+   *          冷却期间忽略所有点击，防止快速切换导致动画叠加混乱。
+   */
   const [isTransitioning, setIsTransitioning] = useState(false);
-  /** 移动端菜单开关状态 */
+  /**
+   * [状态] mobileMenuOpen — 移动端全屏菜单的开关。
+   * [怎么做] 汉堡按钮 onClick 切换布尔值，条件渲染全屏 overlay。
+   * [为什么] 独立状态而非 CSS-only（如 :checked checkbox hack）：
+   *          需要控制 body 滚动锁定、背景模糊等副作用。
+   */
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  /** 邮箱输入框受控值 */
+  /**
+   * [状态] email — 邮箱输入框的受控值。
+   * [怎么做] value={email} + onChange 更新，React 受控组件模式。
+   * [为什么] 受控组件让表单值成为 React state 的单一真相来源，
+   *          便于在 handleSubmit 中读取和验证。
+   */
   const [email, setEmail] = useState('');
 
   /**
-   * 暗色模式：第 3 段视频（Deep Woods, index=2）触发
-   * @description 所有 hero-content 元素切换为深蓝色 #182C41，
-   *              导航栏和底部统计栏保持白色不变。
+   * [派生状态] isDark — 视频索引 2 (Deep Woods) 触发暗色模式。
+   *
+   * [怎么做] 简单的布尔等式 activeVideo === 2，返回 true/false。
+   *          结果用于：
+   *            1. 在 hero div 上添加 'dark' CSS 类 → 级联到 .dark .liquid-glass
+   *            2. 计算 textColor（白色 → #182C41 深蓝）
+   *            3. hero-content 元素的 color transition (700ms)
+   *
+   * [为什么] 硬编码索引 2 = Deep Woods：
+   *   - 简单直接，无需额外配置
+   *   - 如果视频顺序改变，只需修改这一个数字
+   *   - #182C41 取自 Deep Woods 森林视频的主色调，
+   *     在亮色背景（视频）上文字需要深色才可读
    */
   const isDark = activeVideo === 2;
-  /** 动态文本颜色：暗色模式下切换为 #182C41，否则白色 */
+  /**
+   * [派生状态] textColor — 根据暗色模式动态计算文字颜色。
+   * [怎么做] 三元表达式：isDark ? '#182C41' : '#ffffff'。
+   * [为什么] 作为 inline style 传递而非 CSS 类：
+   *   - 颜色需要同时在多个元素上使用（badge/heading/subtext/input/button）
+   *   - 且作为文字颜色和按钮背景色的双用途
+   *   - CSS 变量方案也可以，但 inline style 更直观地表达"颜色由 JS 控制"
+   */
   const textColor = isDark ? '#182C41' : '#ffffff';
 
   /**
-   * 视频切换处理（带冷却保护）
-   * @description 设置 1000ms 过渡锁 (isTransitioning)，
-   *              匹配 CSS opacity transition-duration，
-   *              冷却期间忽略额外点击。
+   * [代码作用] 视频切换的核心逻辑 — 带冷却保护的 crossfade 过渡。
+   *
+   * [怎么做]
+   *   1. 守卫检查：如果点击的是当前视频或正在过渡中 → 忽略
+   *   2. setIsTransitioning(true) 锁定 1000ms
+   *   3. setActiveVideo(index) 切换视频 → CSS opacity transition 自动触发 crossfade
+   *   4. setTimeout 1000ms 后解锁
+   *
+   * [为什么用 useCallback]
+   *   useCallback 配合 [activeVideo, isTransitioning] 依赖数组，
+   *   确保回调引用在依赖不变时保持稳定，避免子组件不必要的重渲染。
+   *
+   * [为什么 1000ms cooling]
+   *   视频 opacity transition-duration 为 1000ms（inline style），
+   *   冷却必须 ≥ transition 时长，否则用户可以在过渡进行中再次点击。
+   *
    * @param {number} index - 目标视频索引 (0-3)
    */
   const switchVideo = useCallback(
