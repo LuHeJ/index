@@ -1,0 +1,1476 @@
+/* ===== 设计令牌 (Design Tokens) ===== */
+:root {
+            --bg-deep: #0a0505;
+            --red-dark: #882222;
+            --red-mid: #b43838;
+            --red-bright: #c84040;
+            --red-light: #e08080;
+            --red-pale: #f0d8d8;
+            --text-dim: rgba(200, 120, 120, 0.5);
+            --text-mid: rgba(180, 100, 100, 0.7);
+            --border-soft: rgba(180, 60, 60, 0.4);
+            --border-glow: rgba(220, 70, 70, 0.7);
+            --shadow-btn: 0 0 18px rgba(180, 35, 35, 0.35);
+            --shadow-btn-hover: 0 0 30px rgba(210, 45, 45, 0.55);
+            --glass-bg: rgba(25, 8, 8, 0.6);
+            --glass-border: rgba(120, 35, 35, 0.35);
+            --transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-deep);
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            color: #fff;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        
+        /* ===== 粒子动画画布 (z-1) ===== */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ===== 暗角遮罩 (z-2) ===== */
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse at top right, rgba(80, 20, 20, 0.25) 0%, transparent 50%),
+                radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
+        }
+
+        /* ===== 网格纹理背景 (z-1) ===== */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(80, 30, 30, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(80, 30, 30, 0.06) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        
+        /* ===== 左上角 Logo 组件 ===== */
+        .logo {
+            position: fixed;
+            top: 32px;
+            left: 24px;
+            z-index: 10;
+            font-size: 14px;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .logo.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .logo .dot {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            background: #c83c3c;
+            border-radius: 50%;
+            margin-right: 5px;
+            box-shadow: 0 0 8px #c83c3c, 0 0 16px rgba(200, 50, 50, 0.4);
+            animation: dotPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes dotPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 6px #c83c3c, 0 0 12px rgba(200, 50, 50, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 14px #e05050, 0 0 24px rgba(220, 60, 60, 0.6);
+            }
+        }
+        .logo .luhe {
+            color: #e8d0d0;
+            transition: color 0.4s ease;
+        }
+        .logo .slash {
+            color: #884444;
+            margin: 0 1px;
+        }
+        .logo .miaow {
+            color: #c85050;
+            transition: color 0.4s ease;
+        }
+        .logo:hover .luhe {
+            color: #f5e5e5;
+        }
+        .logo:hover .miaow {
+            color: #e86868;
+            text-shadow: 0 0 10px rgba(200, 50, 50, 0.5);
+        }
+
+        
+        /* ===== 右上角面板容器 ===== */
+        .top-right-panel {
+            position: fixed;
+            top: 28px;
+            right: 28px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .top-right-panel.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        
+        /* ===== 音乐控制器 (毛玻璃胶囊) ===== */
+        .music-controller {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 26px;
+            padding: 7px 15px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            transition: all var(--transition-smooth);
+            box-shadow: 0 2px 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+        }
+        .music-controller:hover {
+            border-color: rgba(170, 45, 45, 0.6);
+            box-shadow: 0 4px 28px rgba(150, 25, 25, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            transform: translateY(-1px);
+        }
+
+        .music-play-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(110, 28, 28, 0.6) 0%, rgba(70, 15, 15, 0.7) 100%);
+            border: 1.5px solid rgba(180, 50, 50, 0.5);
+            color: #f0d0d0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: all var(--transition-smooth);
+            flex-shrink: 0;
+            outline: none;
+            position: relative;
+            box-shadow: 0 0 10px rgba(160, 30, 30, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            letter-spacing: 0;
+        }
+        .music-play-btn:hover {
+            background: linear-gradient(135deg, rgba(150, 35, 35, 0.7) 0%, rgba(95, 20, 20, 0.8) 100%);
+            border-color: rgba(220, 65, 65, 0.75);
+            box-shadow: 0 0 20px rgba(200, 40, 40, 0.45), 0 0 40px rgba(180, 30, 30, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            color: #fff;
+            transform: scale(1.06);
+        }
+        .music-play-btn:active {
+            transform: scale(0.9);
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 6px rgba(200, 40, 40, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .music-play-btn.playing {
+            animation: musicPulse 2.4s ease-in-out infinite;
+            border-color: rgba(215, 60, 60, 0.7);
+            box-shadow: 0 0 16px rgba(200, 45, 45, 0.5), 0 0 32px rgba(180, 30, 30, 0.25);
+            background: linear-gradient(135deg, rgba(140, 30, 30, 0.65) 0%, rgba(90, 18, 18, 0.75) 100%);
+        }
+        @keyframes musicPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 12px rgba(200, 45, 45, 0.4), 0 0 24px rgba(180, 30, 30, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 24px rgba(225, 55, 55, 0.7), 0 0 48px rgba(200, 40, 40, 0.35), 0 0 60px rgba(180, 30, 30, 0.15);
+            }
+        }
+        .music-play-btn.playing:hover {
+            box-shadow: 0 0 28px rgba(230, 60, 60, 0.75), 0 0 52px rgba(200, 40, 40, 0.4);
+        }
+        .music-play-btn .note-icon {
+            display: inline-block;
+            transition: all 0.35s ease;
+            line-height: 1;
+            font-style: normal;
+        }
+        .music-play-btn.playing .note-icon {
+            animation: noteBounce 0.9s ease-in-out infinite;
+        }
+        @keyframes noteBounce {
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+            35% {
+                transform: translateY(-4px) scale(1.1);
+            }
+            65% {
+                transform: translateY(1px) scale(0.95);
+            }
+        }
+
+        /* --- 音量滑块 --- */
+        .volume-slider-wrap {
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            max-width: 80px;
+            opacity: 1;
+        }
+        .volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 75px;
+            height: 5px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #661a1a 0%, #a03535 60%, #c84040 100%);
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .volume-slider:hover {
+            background: linear-gradient(90deg, #7a2020 0%, #b84040 60%, #d85050 100%);
+            box-shadow: 0 0 8px rgba(200, 40, 40, 0.3);
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #f0a0a0 0%, #d06060 50%, #a03030 100%);
+            border: 2px solid #c84040;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(200, 45, 45, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        .volume-slider::-webkit-slider-thumb:hover {
+            background: radial-gradient(circle at 40% 35%, #f8b8b8 0%, #e07070 50%, #b83838 100%);
+            border-color: #e06060;
+            box-shadow: 0 0 18px rgba(220, 55, 55, 0.7), 0 2px 6px rgba(0, 0, 0, 0.35);
+            transform: scale(1.15);
+        }
+        .volume-slider::-moz-range-thumb {
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #f0a0a0 0%, #d06060 50%, #a03030 100%);
+            border: 2px solid #c84040;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(200, 45, 45, 0.5);
+        }
+        .volume-slider::-moz-range-track {
+            height: 5px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #661a1a 0%, #a03535 60%, #c84040 100%);
+        }
+
+        
+        /* ===== 页面导航指示器 (test.html 独有) =====
+   [作用] 右上角的 4 个横条指示器，显示当前在第几个场景，点击可切换。
+   [怎么做] 4 个 span.nav-dash 水平排列在毛玻璃容器中，
+           激活态 .active：更宽（18→32px）、更亮（白底发光）、
+           点击时 ::after 伪元素波纹扩散到 44px 后消失。
+   [为什么] 横条而非圆点：横条有"进度条"和"选项卡"的双重暗示，
+           比圆点更直观地展示 4 页中的当前位置。
+   [为什么] ::after 波纹用 0s transition
+     - :active 时瞬间出现（width/height 从 0→44px 无过渡）
+     - :not(:active) 时 0.5s 渐变消失（transition: all 0.5s）
+     - 这种不对称过渡创造"点击爆炸然后缓慢消散"的效果
+   ============================================================ */
+        .page-nav-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            padding: 9px 15px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all var(--transition-smooth);
+            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+        }
+        .page-nav-indicator:hover {
+            border-color: rgba(160, 42, 42, 0.55);
+            box-shadow: 0 4px 22px rgba(140, 22, 22, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            transform: translateY(-1px);
+        }
+        .nav-dash {
+            display: block;
+            height: 2.8px;
+            width: 18px;
+            border-radius: 3px;
+            background: rgba(150, 80, 80, 0.35);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+        .nav-dash.active {
+            width: 32px;
+            height: 4px;
+            background: #f5e8e8;
+            box-shadow: 0 0 12px rgba(255, 220, 220, 0.75), 0 0 24px rgba(220, 150, 150, 0.4), 0 0 36px rgba(200, 80, 80, 0.2);
+            border-radius: 4px;
+        }
+        .nav-dash:hover:not(.active) {
+            background: rgba(200, 110, 110, 0.65);
+            width: 23px;
+            box-shadow: 0 0 8px rgba(200, 90, 90, 0.4);
+        }
+        .nav-dash.active:hover {
+            box-shadow: 0 0 18px rgba(255, 225, 225, 0.9), 0 0 32px rgba(220, 150, 150, 0.55), 0 0 48px rgba(200, 80, 80, 0.3);
+            width: 34px;
+        }
+        .nav-dash::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: all 0.5s ease;
+            pointer-events: none;
+        }
+        .nav-dash:active::after {
+            width: 44px;
+            height: 44px;
+            opacity: 0;
+            transition: all 0s;
+        }
+
+        
+        /* ===== 左下角欢迎区 ===== */
+        .welcome-area {
+            position: fixed;
+            bottom: 80px;
+            left: 24px;
+            z-index: 10;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .welcome-area.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .welcome-text {
+            font-size: 26px;
+            font-weight: 400;
+            color: #f0e0e0;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(200, 60, 60, 0.3);
+            transition: text-shadow 0.5s ease;
+        }
+        .welcome-area:hover .welcome-text {
+            text-shadow: 0 0 28px rgba(210, 65, 65, 0.45), 0 0 50px rgba(180, 40, 40, 0.2);
+        }
+
+        .enter-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 11px;
+            padding: 11px 26px;
+            background: linear-gradient(135deg, rgba(120, 28, 28, 0.4) 0%, rgba(70, 14, 14, 0.5) 100%);
+            border: 1.5px solid rgba(180, 55, 55, 0.45);
+            border-radius: 6px;
+            color: #f0d8d8;
+            font-size: 15px;
+            cursor: pointer;
+            letter-spacing: 3px;
+            transition: all var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.3);
+            outline: none;
+        }
+        .enter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(210, 55, 55, 0.35), rgba(255, 180, 180, 0.15), transparent);
+            transition: left 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 0;
+        }
+        .enter-btn:hover::before {
+            left: 100%;
+        }
+        .enter-btn:hover {
+            background: linear-gradient(135deg, rgba(155, 38, 38, 0.55) 0%, rgba(95, 20, 20, 0.6) 100%);
+            border-color: rgba(225, 75, 75, 0.7);
+            box-shadow: 0 0 22px rgba(180, 35, 35, 0.4), 0 4px 18px rgba(0, 0, 0, 0.4);
+            color: #fff;
+            letter-spacing: 4px;
+            transform: translateY(-2px);
+        }
+        .enter-btn:active {
+            transform: scale(0.95);
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 8px rgba(180, 35, 35, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .enter-btn .arrow {
+            transition: all 0.35s ease;
+            position: relative;
+            z-index: 1;
+            font-size: 16px;
+        }
+        .enter-btn:hover .arrow {
+            transform: translateX(5px);
+            text-shadow: 0 0 8px rgba(255, 200, 200, 0.6);
+        }
+        .enter-btn span {
+            position: relative;
+            z-index: 1;
+        }
+        .enter-hint {
+            margin-top: 9px;
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            transition: color 0.4s ease;
+        }
+        .welcome-area:hover .enter-hint {
+            color: rgba(220, 130, 130, 0.6);
+        }
+
+        
+        /* ===== 右下角个人信息卡 (白色毛玻璃) =====
+   [作用] 右下角个人信息卡片，使用白色半透明毛玻璃风格。
+   [怎么做] background: rgba(255,255,255,0.2) + backdrop-filter: blur(10px)。
+   [为什么] 白色毛玻璃 vs index.html 的暗红毛玻璃：
+     - 白色更轻量、更友好，适合"实验版"的定位
+     - rgba(255,255,255,0.2) 在暗背景上呈现半透明白色
+     - blur(10px) 比 index.html 的 18px 更轻，因为白色本身可见度高
+     - 这是一个"设计变体试验"，探索不同毛玻璃风格的效果
+   ============================================================ */
+        .profile-card {
+            position: fixed;
+            bottom: 115px;
+            right: 80px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 32px 38px 28px 38px;
+            min-width: 350px;
+            max-width: 460px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 28px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+            text-align: left;
+        }
+        .profile-card.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .profile-card:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.22);
+            box-shadow: 0 8px 36px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            transform: translateY(-3px);
+            transition: all var(--transition-smooth);
+        }
+
+        .profile-label {
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            font-size: 15px;
+            letter-spacing: 3.5px;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: left;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .profile-name {
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            font-size: 40px;
+            letter-spacing: 3px;
+            color: #ffffff;
+            text-align: left;
+            margin-bottom: 12px;
+            line-height: 1;
+            text-shadow: 0 0 16px rgba(255, 255, 255, 0.4);
+        }
+
+        .profile-desc {
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            font-size: 15px;
+            letter-spacing: 2.5px;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: left;
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        .profile-info-row {
+            margin-bottom: 8px;
+            text-align: left;
+        }
+        .profile-info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .profile-info-label {
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            font-size: 14px;
+            letter-spacing: 3.5px;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: left;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .profile-info-value {
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.9);
+            text-align: left;
+            line-height: 1.3;
+        }
+
+        
+        /* ===== 底部状态栏 ===== */
+        .status-bar {
+            position: fixed;
+            bottom: 16px;
+            left: 24px;
+            right: 24px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 10px;
+            color: var(--text-mid);
+            letter-spacing: 1.5px;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .status-bar.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .status-bar .progress-track {
+            flex: 1;
+            height: 2px;
+            background: rgba(80, 30, 30, 0.25);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+        .status-bar .progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #882222, #c84040, #e05858);
+            box-shadow: 0 0 10px rgba(200, 60, 60, 0.5);
+            border-radius: 2px;
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+        @keyframes pulseGlow {
+            0%,
+            100% {
+                opacity: 0.55;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        
+        /* ===== 右侧装饰线 ===== */
+        .side-line {
+            position: fixed;
+            top: 15%;
+            right: 40px;
+            width: 1px;
+            height: 70%;
+            background: linear-gradient(to bottom, transparent, rgba(120, 40, 40, 0.25), rgba(180, 50, 50, 0.15), transparent);
+            z-index: 3;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .side-line.overlay-active {
+            opacity: 0;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        
+        /* ===== 右下角控制按钮组 ===== */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .controls.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .control-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(180, 100, 100, 0.45);
+            cursor: pointer;
+            transition: all var(--transition-smooth);
+            font-size: 14px;
+            background: rgba(30, 8, 8, 0.4);
+            border: 1px solid rgba(100, 30, 30, 0.25);
+            position: relative;
+            outline: none;
+        }
+        .control-btn:hover {
+            color: #e87878;
+            background: rgba(60, 15, 15, 0.6);
+            border-color: rgba(180, 45, 45, 0.55);
+            box-shadow: 0 0 14px rgba(180, 35, 35, 0.35), 0 0 28px rgba(150, 25, 25, 0.15);
+            transform: translateY(-2px);
+        }
+        .control-btn:active {
+            transform: scale(0.88);
+            transition: transform 0.1s ease;
+        }
+
+        
+        /* ===== 滑动过渡遮罩 (z-100) ===== */
+        .slide-mask {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: #0a0505;
+            z-index: 100;
+            transition: left 0.8s cubic-bezier(0.7, 0, 0.3, 1);
+        }
+        .slide-mask.active {
+            left: 0;
+        }
+
+        
+        /* ===== 毛玻璃欢迎覆盖层 (z-15) ===== */
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 15;
+            background: rgba(8, 3, 3, 0.3);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .welcome-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .welcome-overlay.fading-out {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .welcome-overlay-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        .welcome-title {
+            font-family: 'VT323', 'Courier New', monospace;
+            font-size: clamp(52px, 8vw, 88px);
+            color: #f5e0e0;
+            letter-spacing: 6px;
+            text-shadow:
+                0 0 30px rgba(220, 80, 80, 0.5),
+                0 0 60px rgba(200, 50, 50, 0.3),
+                0 0 100px rgba(180, 30, 30, 0.2),
+                0 2px 4px rgba(0, 0, 0, 0.6);
+            line-height: 1.1;
+            transition: transform 0.6s ease, text-shadow 0.6s ease;
+        }
+        .welcome-overlay.visible .welcome-title {
+            animation: titleFloat 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes titleFloat {
+            from {
+                transform: translateY(18px);
+                opacity: 0.6;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .welcome-enter-btn {
+            font-family: 'VT323', 'Courier New', 'Microsoft YaHei', monospace;
+            font-size: clamp(20px, 2.8vw, 28px);
+            letter-spacing: 5px;
+            color: #f0d8d8;
+            background: linear-gradient(135deg, rgba(100, 22, 22, 0.45) 0%, rgba(55, 10, 10, 0.55) 100%);
+            border: 2px solid rgba(200, 65, 65, 0.5);
+            border-radius: 10px;
+            padding: 15px 44px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            outline: none;
+            box-shadow: 0 0 18px rgba(170, 30, 30, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4);
+            text-shadow: 0 0 8px rgba(200, 100, 100, 0.4);
+        }
+        .welcome-overlay.visible .welcome-enter-btn {
+            animation: btnReveal 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.25s forwards;
+        }
+        @keyframes btnReveal {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .welcome-enter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(220, 75, 75, 0.3), rgba(255, 200, 200, 0.12), transparent);
+            transition: left 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 0;
+        }
+        .welcome-enter-btn:hover::before {
+            left: 100%;
+        }
+        .welcome-enter-btn:hover {
+            background: linear-gradient(135deg, rgba(155, 35, 35, 0.6) 0%, rgba(80, 18, 18, 0.7) 100%);
+            border-color: rgba(235, 85, 85, 0.8);
+            box-shadow:
+                0 0 30px rgba(200, 45, 45, 0.5),
+                0 0 60px rgba(180, 30, 30, 0.25),
+                0 0 90px rgba(160, 20, 20, 0.1),
+                0 6px 20px rgba(0, 0, 0, 0.5);
+            color: #fff;
+            letter-spacing: 7px;
+            transform: translateY(-3px);
+            text-shadow: 0 0 14px rgba(255, 180, 180, 0.5);
+        }
+        .welcome-enter-btn:active {
+            transform: scale(0.94);
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 12px rgba(200, 45, 45, 0.35), inset 0 3px 6px rgba(0, 0, 0, 0.35);
+        }
+        .welcome-enter-btn span {
+            position: relative;
+            z-index: 1;
+        }
+        .welcome-subtle {
+            position: absolute;
+            bottom: 60px;
+            font-family: 'VT323', 'Courier New', monospace;
+            font-size: 13px;
+            letter-spacing: 3px;
+            color: rgba(200, 130, 130, 0.35);
+            text-align: center;
+            pointer-events: none;
+            transition: color 0.5s ease;
+        }
+        .welcome-overlay.visible .welcome-subtle {
+            animation: subtleReveal 1.2s ease 0.5s forwards;
+        }
+        @keyframes subtleReveal {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        
+        /* ============================================================
+           Vue 3 全屏覆盖层系统 (z-200)
+           左侧导航栏 + 右侧内容区，panel-fade 过渡
+           ============================================================ */
+        .vue-overlay-root {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 200;
+            pointer-events: auto;
+            display: flex;
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+        }
+
+        
+        .vue-overlay-enter-active {
+            transition: all 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .vue-overlay-leave-active {
+            transition: all 0.4s cubic-bezier(0.6, 0, 0.8, 1);
+        }
+        .vue-overlay-enter-from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        .vue-overlay-leave-to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        
+        /* --- Vue 主容器 (纯暗色背景，无背景图) ---
+   [作用] Vue 覆盖层的内容容器 — 纯深色半透明背景，无背景图片。
+   [怎么做] rgba(6,2,2,0.92) 接近不透明的深红黑 + blur(18px)。
+   [为什么] 不用背景图（与 index.html 不同）：
+     - test.html 本身也没有双图背景，风格更简洁
+     - 纯色背景让 Vue 内容更突出，减少视觉干扰
+     - 0.92 的不透明度确保下层粒子动画几乎不可见，专注内容
+   ============================================================ */
+        .vue-main-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(6, 2, 2, 0.92);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            display: flex;
+            flex-direction: row;
+            z-index: 1;
+        }
+
+        
+        /* --- 左侧导航栏 --- */
+        .vue-sidebar {
+            width: 220px;
+            min-width: 220px;
+            height: 100%;
+            background: rgba(18, 6, 6, 0.7);
+            border-right: 1px solid rgba(140, 40, 40, 0.4);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 0;
+            gap: 6px;
+            box-shadow: 2px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+        .vue-sidebar-header {
+            padding: 0 20px 22px 20px;
+            border-bottom: 1px solid rgba(140, 40, 40, 0.3);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .vue-sidebar-title {
+            font-size: 22px;
+            letter-spacing: 4px;
+            color: #f0d8d8;
+            text-shadow: 0 0 12px rgba(200, 60, 60, 0.4);
+        }
+        .vue-sidebar-subtitle {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: rgba(200, 130, 130, 0.5);
+            margin-top: 4px;
+        }
+        .vue-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 22px;
+            margin: 0 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            color: rgba(200, 150, 150, 0.6);
+            font-size: 15px;
+            letter-spacing: 2px;
+            position: relative;
+            outline: none;
+            background: transparent;
+        }
+        .vue-nav-item:hover {
+            background: rgba(100, 25, 25, 0.3);
+            border-color: rgba(180, 50, 50, 0.35);
+            color: #e8c8c8;
+            box-shadow: 0 0 10px rgba(160, 30, 30, 0.2);
+        }
+        .vue-nav-item.active {
+            background: rgba(140, 30, 30, 0.45);
+            border-color: rgba(210, 55, 55, 0.6);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(200, 45, 45, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+        .vue-nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: #e06060;
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(220, 60, 60, 0.6);
+        }
+        .vue-nav-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .vue-nav-item.active .vue-nav-dot {
+            box-shadow: 0 0 10px currentColor;
+            background: #f5c0c0;
+        }
+
+        
+        /* --- 右侧内容区 --- */
+        .vue-content-area {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .vue-content-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 28px;
+            border-bottom: 1px solid rgba(140, 40, 40, 0.25);
+            flex-shrink: 0;
+        }
+        .vue-content-title {
+            font-size: 20px;
+            letter-spacing: 3px;
+            color: #f0d8d8;
+            text-shadow: 0 0 8px rgba(200, 60, 60, 0.3);
+        }
+        .vue-close-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(80, 20, 20, 0.5);
+            border: 1.5px solid rgba(180, 50, 50, 0.5);
+            color: #f0c8c8;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            letter-spacing: 0;
+            font-family: 'VT323', monospace;
+        }
+        .vue-close-btn:hover {
+            background: rgba(160, 35, 35, 0.7);
+            border-color: rgba(220, 65, 65, 0.7);
+            box-shadow: 0 0 20px rgba(200, 40, 40, 0.5);
+            color: #fff;
+            transform: scale(1.08);
+        }
+        .vue-close-btn:active {
+            transform: scale(0.9);
+            transition: transform 0.1s ease;
+        }
+        .vue-content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 32px;
+            scroll-behavior: smooth;
+        }
+        .vue-content-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-track {
+            background: rgba(30, 10, 10, 0.4);
+            border-radius: 3px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-thumb {
+            background: rgba(140, 40, 40, 0.5);
+            border-radius: 3px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(180, 50, 50, 0.7);
+        }
+
+        
+        .panel-fade-enter-active,
+        .panel-fade-leave-active {
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .panel-fade-enter-from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        .panel-fade-leave-to {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        
+        /* --- 内容卡片 --- */
+        .vue-card {
+            background: rgba(25, 8, 8, 0.5);
+            border: 1px solid rgba(140, 35, 35, 0.3);
+            border-radius: 12px;
+            padding: 22px 26px;
+            margin-bottom: 18px;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.3);
+        }
+        .vue-card:hover {
+            border-color: rgba(180, 50, 50, 0.55);
+            box-shadow: 0 4px 24px rgba(140, 25, 25, 0.35);
+            background: rgba(30, 10, 10, 0.6);
+            transform: translateY(-2px);
+        }
+        .vue-card-title {
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: #f0d8d8;
+            margin-bottom: 8px;
+        }
+        .vue-card-desc {
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            color: rgba(200, 150, 150, 0.7);
+            line-height: 1.6;
+        }
+        .vue-tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .vue-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 14px;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            background: rgba(100, 25, 25, 0.4);
+            border: 1px solid rgba(180, 50, 50, 0.35);
+            color: #e8c0c0;
+            transition: all 0.3s ease;
+        }
+        .vue-tag:hover {
+            background: rgba(150, 35, 35, 0.5);
+            border-color: rgba(210, 60, 60, 0.55);
+            box-shadow: 0 0 8px rgba(180, 35, 35, 0.3);
+            color: #fff;
+        }
+        .vue-highlight-num {
+            font-size: 40px;
+            letter-spacing: 2px;
+            color: #f5e0e0;
+            text-shadow: 0 0 16px rgba(220, 60, 60, 0.5);
+            line-height: 1;
+        }
+        .vue-link {
+            color: #e08080;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            letter-spacing: 1.5px;
+        }
+        .vue-link:hover {
+            color: #f5c0c0;
+            text-shadow: 0 0 10px rgba(220, 80, 80, 0.5);
+        }
+
+        
+        /* ===== 响应式：平板 (<=768px) ===== */
+        @media (max-width: 768px) {
+            .top-right-panel {
+                top: 14px;
+                right: 10px;
+                gap: 8px;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            .music-controller {
+                padding: 5px 10px;
+                gap: 7px;
+                border-radius: 20px;
+            }
+            .music-play-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 11px;
+            }
+            .volume-slider {
+                width: 48px;
+                height: 4px;
+            }
+            .volume-slider-wrap {
+                max-width: 52px;
+            }
+            .page-nav-indicator {
+                padding: 6px 10px;
+                gap: 5px;
+                border-radius: 16px;
+            }
+            .nav-dash {
+                width: 14px;
+                height: 2.2px;
+            }
+            .nav-dash.active {
+                width: 24px;
+                height: 3.2px;
+            }
+            .welcome-overlay-inner {
+                gap: 28px;
+                padding: 24px;
+            }
+            .welcome-title {
+                letter-spacing: 3px;
+            }
+            .welcome-enter-btn {
+                padding: 13px 32px;
+                letter-spacing: 3px;
+            }
+            .welcome-subtle {
+                bottom: 40px;
+                font-size: 11px;
+                letter-spacing: 2px;
+            }
+            .side-line {
+                right: 16px;
+            }
+            .status-bar {
+                left: 12px;
+                right: 12px;
+                font-size: 8px;
+            }
+            .logo {
+                top: 18px;
+                left: 12px;
+                font-size: 12px;
+            }
+            .welcome-area {
+                bottom: 60px;
+                left: 12px;
+            }
+            .welcome-text {
+                font-size: 20px;
+            }
+            .enter-btn {
+                padding: 9px 18px;
+                font-size: 13px;
+                letter-spacing: 2px;
+            }
+            .controls {
+                bottom: 14px;
+                right: 12px;
+                gap: 7px;
+            }
+            .control-btn {
+                width: 26px;
+                height: 26px;
+                font-size: 12px;
+            }
+            .profile-card {
+                bottom: 95px;
+                right: 40px;
+                padding: 22px 24px 20px 24px;
+                min-width: 260px;
+                max-width: 320px;
+                border-radius: 18px;
+            }
+            .profile-label {
+                font-size: 12px;
+                letter-spacing: 3px;
+            }
+            .profile-name {
+                font-size: 30px;
+                letter-spacing: 2.5px;
+            }
+            .profile-desc {
+                font-size: 12px;
+                letter-spacing: 2px;
+                margin-bottom: 12px;
+            }
+            .profile-info-label {
+                font-size: 11px;
+                letter-spacing: 3px;
+            }
+            .profile-info-value {
+                font-size: 14px;
+                letter-spacing: 1.5px;
+            }
+
+            
+            .vue-main-overlay {
+                flex-direction: column;
+            }
+            .vue-sidebar {
+                width: 100%;
+                min-width: 100%;
+                height: auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 10px 8px;
+                gap: 4px;
+                border-right: none;
+                border-bottom: 1px solid rgba(140, 40, 40, 0.4);
+                justify-content: center;
+                box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+            }
+            .vue-sidebar-header {
+                display: none;
+            }
+            .vue-nav-item {
+                padding: 8px 12px;
+                margin: 2px;
+                font-size: 12px;
+                letter-spacing: 1.5px;
+                border-radius: 6px;
+                gap: 6px;
+            }
+            .vue-nav-item.active::before {
+                display: none;
+            }
+            .vue-nav-dot {
+                width: 4px;
+                height: 4px;
+            }
+            .vue-content-topbar {
+                padding: 12px 16px;
+            }
+            .vue-content-title {
+                font-size: 16px;
+                letter-spacing: 2px;
+            }
+            .vue-close-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 13px;
+            }
+            .vue-content-scroll {
+                padding: 16px;
+            }
+            .vue-card {
+                padding: 14px 16px;
+                margin-bottom: 12px;
+            }
+            .vue-card-title {
+                font-size: 15px;
+            }
+            .vue-card-desc {
+                font-size: 11px;
+            }
+            .vue-highlight-num {
+                font-size: 28px;
+            }
+        }
+/* ===== 响应式：手机 (<=480px) ===== */
+        @media (max-width: 480px) {
+            .top-right-panel {
+                top: 8px;
+                right: 4px;
+                gap: 5px;
+            }
+            .music-controller {
+                padding: 4px 8px;
+                gap: 4px;
+                border-radius: 16px;
+            }
+            .music-play-btn {
+                width: 24px;
+                height: 24px;
+                font-size: 9px;
+            }
+            .volume-slider {
+                width: 34px;
+                height: 3px;
+            }
+            .volume-slider-wrap {
+                max-width: 38px;
+            }
+            .volume-slider::-webkit-slider-thumb {
+                width: 12px;
+                height: 12px;
+            }
+            .page-nav-indicator {
+                padding: 5px 8px;
+                gap: 4px;
+                border-radius: 14px;
+            }
+            .nav-dash {
+                width: 11px;
+                height: 1.8px;
+            }
+            .nav-dash.active {
+                width: 20px;
+                height: 2.6px;
+            }
+            .welcome-enter-btn {
+                padding: 11px 24px;
+                font-size: 18px;
+                letter-spacing: 2px;
+                border-radius: 8px;
+            }
+            .profile-card {
+                bottom: 70px;
+                right: 24px;
+                padding: 16px 18px 14px 18px;
+                min-width: 200px;
+                max-width: 240px;
+                border-radius: 16px;
+            }
+            .profile-label {
+                font-size: 10px;
+                letter-spacing: 2.5px;
+            }
+            .profile-name {
+                font-size: 24px;
+                letter-spacing: 2px;
+            }
+            .profile-desc {
+                font-size: 10px;
+                letter-spacing: 1.5px;
+                margin-bottom: 10px;
+            }
+            .profile-info-label {
+                font-size: 10px;
+                letter-spacing: 2.5px;
+            }
+            .profile-info-value {
+                font-size: 12px;
+                letter-spacing: 1px;
+            }
+            .controls {
+                bottom: 10px;
+                right: 6px;
+                gap: 5px;
+            }
+            .control-btn {
+                width: 22px;
+                height: 22px;
+                font-size: 10px;
+            }
+            .status-bar {
+                left: 8px;
+                right: 8px;
+            }
+            .vue-nav-item {
+                padding: 6px 8px;
+                font-size: 10px;
+                letter-spacing: 1px;
+                border-radius: 4px;
+            }
+            .vue-content-scroll {
+                padding: 12px;
+            }
+            .vue-card {
+                padding: 10px 12px;
+                border-radius: 8px;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 10, 10, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(120, 40, 40, 0.5);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(160, 50, 50, 0.7);
+        }
