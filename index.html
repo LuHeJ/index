@@ -1857,6 +1857,73 @@
             #particle-canvas { display: none; }
         }
 
+        /* ===== 新美化：面板卡片错位入场动画 =====
+           [作用] 每个 .panel-card 卡片按 --i 自定义属性错时淡入上浮。
+           [怎么做] animation-delay 用 calc(var(--i) * 0.08s) 递增，
+                    每个卡片比前一个晚 80ms 入场。
+           [为什么] 瀑布式入场比同时出现更有层次感，80ms 间隔刚好可感知但不拖沓。 */
+        .panel-card {
+            animation: cardSlideUp 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+            animation-delay: calc(var(--i, 0) * 0.08s);
+        }
+        @keyframes cardSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 新美化：标签渐变 hover =====
+           [作用] .vue-tag hover 时背景从暗红变为亮红渐变，文字变白。 */
+        .vue-tag {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .vue-tag:hover {
+            background: linear-gradient(135deg, rgba(200, 50, 50, 0.6), rgba(160, 30, 30, 0.5));
+            border-color: rgba(230, 70, 70, 0.65);
+            box-shadow: 0 0 14px rgba(200, 45, 45, 0.5);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* ===== 新美化：技能进度条扫光动画 =====
+           [作用] 简历页技能条的填充部分有从左到右的微光扫过效果。 */
+        .resume-skill-fill {
+            position: relative;
+            overflow: hidden;
+        }
+        .resume-skill-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2.5s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0%, 100% { left: -100%; }
+            50% { left: 120%; }
+        }
+
+        /* ===== 新美化：时间线圆点脉冲 =====
+           [作用] 时间线左侧圆点带有呼吸式脉冲动画，暗示"进行中"的生命力。 */
+        .timeline-item::before {
+            animation: timelinePulse 2s ease-in-out infinite;
+        }
+        @keyframes timelinePulse {
+            0%, 100% {
+                box-shadow: 0 0 6px rgba(200, 60, 60, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 16px rgba(220, 70, 70, 0.8), 0 0 28px rgba(200, 50, 50, 0.3);
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -2018,301 +2085,16 @@
                         <div class="vue-content-scroll">
                             <transition name="panel-fade" mode="out-in">
                                 
-                                <div v-if="currentTab === 1" :key="1">
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">关于我</div>
-                                        <div class="vue-card-desc">
-                                            23届计算机应用技术专业专科毕业生，具备Web全栈开发、AI工具落地、视觉设计与视频剪辑复合能力。
-                                            有企业前端实习经验，擅长从需求到落地的完整交付，注重代码质量与交互体验的平衡，
-                                            始终保持技术学习热情，持续拓展能力边界。
-                                        </div>
-                                        <div class="vue-tag-row">
-                                            <span class="vue-tag">前端开发</span>
-                                            <span class="vue-tag">AI增效</span>
-                                            <span class="vue-tag">视觉设计</span>
-                                            <span class="vue-tag">视频剪辑</span>
-                                            <span class="vue-tag">全栈实践</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">教育背景</div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-time">2020 - 2023</div>
-                                            <div class="timeline-title">计算机应用技术 · 专科</div>
-                                            <div class="timeline-desc">
-                                                系统学习计算机基础、前端开发、Python/C++程序设计、数据库原理等课程，
-                                                在校期间完成多个课程项目，打下扎实的技术基础。
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">实习经历</div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-time">苏州极豹信息科技 · 前端开发实习生</div>
-                                            <div class="timeline-title">负责企业官网与内部管理系统前端开发</div>
-                                            <div class="timeline-desc">
-                                                基于Vue.js完成页面组件开发与迭代，配合后端联调接口，
-                                                参与页面性能优化，首屏加载速度提升约30%，协助完成响应式适配与兼容性修复。
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">项目经历</div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-time">2024.01 - 至今</div>
-                                            <div class="timeline-title">个人品牌主页 · 独立开发</div>
-                                            <div class="timeline-desc">
-                                                独立设计并开发响应式个人主页，融合 Canvas 粒子动画、Vue 3 动态路由、毛玻璃 UI 等交互效果，
-                                                完整展示个人技术栈与审美风格，作为求职与技术交流的名片。
-                                            </div>
-                                        </div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-time">2023.09 - 2023.12</div>
-                                            <div class="timeline-title">校园二手交易小程序 · 核心开发</div>
-                                            <div class="timeline-desc">
-                                                使用微信小程序原生框架 + 云开发，实现商品发布、搜索筛选、在线聊天、订单管理等核心功能。
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">兴趣爱好</div>
-                                        <div class="vue-tag-row">
-                                            <span class="vue-tag">🎮 游戏</span>
-                                            <span class="vue-tag">🎀 二次元</span>
-                                            <span class="vue-tag">🎵 音乐</span>
-                                            <span class="vue-tag">📷 摄影</span>
-                                            <span class="vue-tag">🎬 剪辑</span>
-                                            <span class="vue-tag">🎸 吉他</span>
-                                            <span class="vue-tag">☕ 咖啡</span>
-                                            <span class="vue-tag">🍸 鸡尾酒</span>
-                                            <span class="vue-tag">🌧️ 淋雨</span>
-                                            <span class="vue-tag">✈️ 旅游</span>
-                                            <span class="vue-tag">···</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">个人理念</div>
-                                        <div class="vue-card-desc" style="font-size:16px;color:#f0d8d8;">
-                                            "技术是工具，创意是内核，做能解决实际问题的创造者。"
-                                        </div>
-                                    </div>
-                                </div>
+                                <about-panel v-if="currentTab === 1" :key="1"></about-panel>
 
                                 
-                                <div v-if="currentTab === 2" :key="2">
-                                    <div class="vue-card" v-for="skillGroup in skillGroups" :key="skillGroup.category">
-                                        <div class="vue-card-title">{{ skillGroup.category }}</div>
-                                        <div class="vue-card-desc">{{ skillGroup.description }}</div>
-                                        <div class="vue-tag-row">
-                                            <span class="vue-tag" v-for="skill in skillGroup.skills" :key="skill">{{ skill }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">常用工具</div>
-                                        <div class="vue-tag-row">
-                                            <span class="vue-tag">VS Code</span>
-                                            <span class="vue-tag">Git</span>
-                                            <span class="vue-tag">Figma</span>
-                                            <span class="vue-tag">Postman</span>
-                                            <span class="vue-tag">Claude AI</span>
-                                            <span class="vue-tag">ChatGPT</span>
-                                            <span class="vue-tag">Photoshop</span>
-                                            <span class="vue-tag">剪映</span>
-                                        </div>
-                                    </div>
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">正在学习</div>
-                                        <div class="vue-card-desc">
-                                            深入探索 TypeScript 类型系统、Next.js 全栈框架、Three.js 3D 可视化，
-                                            持续拓展技术视野与实战能力。
-                                        </div>
-                                        <div class="vue-tag-row">
-                                            <span class="vue-tag">TypeScript</span>
-                                            <span class="vue-tag">Next.js</span>
-                                            <span class="vue-tag">Three.js</span>
-                                        </div>
-                                    </div>
-                                    <div class="vue-card" style="text-align:center;">
-                                        <div class="vue-highlight-num">{{ totalSkillCount }}+</div>
-                                        <div class="vue-card-desc" style="margin-top:4px;">技能标签总数 · 持续学习迭代中</div>
-                                    </div>
-                                </div>
+                                <skills-panel v-if="currentTab === 2" :key="2"></skills-panel>
 
                                 
-                                <div v-if="currentTab === 3" :key="3">
-                                    <div class="vue-card" v-for="contact in contacts" :key="contact.label">
-                                        <div class="vue-card-title">{{ contact.label }}</div>
-                                        <div class="vue-card-desc">
-                                            <a v-if="contact.link" :href="contact.link" target="_blank" class="vue-link">{{ contact.value }}</a>
-                                            <span v-else>{{ contact.value }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">社交媒体</div>
-                                        <div class="vue-card-desc">
-                                            更多动态与作品持续更新中，欢迎关注与交流。
-                                        </div>
-                                        <div class="vue-tag-row">
-                                            <span class="vue-tag">GitHub</span>
-                                            <span class="vue-tag">掘金</span>
-                                            <span class="vue-tag">CSDN</span>
-                                            <span class="vue-tag">B站</span>
-                                            <span class="vue-tag">抖音</span>
-                                        </div>
-                                    </div>
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">在线时间</div>
-                                        <div class="vue-card-desc">
-                                            工作日 19:00 - 23:00 在线<br />
-                                            周末全天可沟通<br />
-                                            紧急事务请邮件联系，24小时内回复。
-                                        </div>
-                                    </div>
-                                    <div class="vue-card">
-                                        <div class="vue-card-title">合作说明</div>
-                                        <div class="vue-card-desc">
-                                            欢迎技术交流、项目合作与求职机会沟通，无论是前端开发、AI工具落地、
-                                            视觉设计还是视频剪辑相关的需求，都可以随时联系，我会尽快回复。
-                                        </div>
-                                    </div>
-                                </div>
+                                <contact-panel v-if="currentTab === 3" :key="3"></contact-panel>
 
                                 
-                                <div v-if="currentTab === 4" :key="4">
-                                    
-                                    <div class="vue-card">
-                                        <div class="resume-header">
-                                            <div class="resume-name-block">
-                                                <h2>鹿禾 / LuHe</h2>
-                                                <p>Web前端开发 · 全栈实践 · AI增效工程师</p>
-                                            </div>
-                                            <div class="resume-contact-grid">
-                                                <span><strong>所在城市</strong>河北石家庄</span>
-                                                <span><strong>工作性质</strong>全职 / 远程</span>
-                                                <span><strong>电子邮箱</strong>2743591998@qq.com</span>
-                                                <span><strong>GitHub</strong>github.com/LuHeJ/index.git</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    
-                                    <div class="vue-card">
-                                        <div class="resume-section-title">教育背景</div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-time">2020.09 - 2023.06</div>
-                                            <div class="timeline-title">计算机应用技术 · 专科</div>
-                                            <div class="timeline-desc">
-                                                主修课程：Web前端开发、数据结构、数据库原理、Python程序设计、C++程序设计、计算机网络、UI设计基础<br />
-                                                专业排名前15%，多次获得学业奖学金，完成多个课程设计与实战项目。
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    
-                                    <div class="vue-card">
-                                        <div class="resume-section-title">工作/实习经历</div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-time">2023.03 - 2023.08</div>
-                                            <div class="timeline-title">苏州极豹信息科技有限公司 · 前端开发实习生</div>
-                                            <div class="timeline-desc">
-                                                1. 参与企业官网与内部管理系统的前端开发，基于Vue 3 + Element Plus实现20+业务组件，覆盖数据看板、表单、权限管理等模块；<br />
-                                                2. 配合后端完成接口联调，使用Axios封装统一请求拦截与错误处理，提升接口联调效率约25%；<br />
-                                                3. 负责页面响应式适配与浏览器兼容性优化，覆盖Chrome、Edge、移动端等多端，首屏加载速度提升30%；<br />
-                                                4. 参与代码评审与技术文档编写，协助团队建立前端组件规范。
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    
-                                    <div class="vue-card">
-                                        <div class="resume-section-title">专业技能</div>
-                                        <div class="resume-skill-row">
-                                            <div class="resume-skill-name">HTML5 / CSS3</div>
-                                            <div class="resume-skill-bar">
-                                                <div class="resume-skill-fill" style="width: 90%;"></div>
-                                            </div>
-                                            <div class="resume-skill-level">熟练</div>
-                                        </div>
-                                        <div class="resume-skill-row">
-                                            <div class="resume-skill-name">JavaScript</div>
-                                            <div class="resume-skill-bar">
-                                                <div class="resume-skill-fill" style="width: 85%;"></div>
-                                            </div>
-                                            <div class="resume-skill-level">熟练</div>
-                                        </div>
-                                        <div class="resume-skill-row">
-                                            <div class="resume-skill-name">Vue 3</div>
-                                            <div class="resume-skill-bar">
-                                                <div class="resume-skill-fill" style="width: 80%;"></div>
-                                            </div>
-                                            <div class="resume-skill-level">熟练</div>
-                                        </div>
-                                        <div class="resume-skill-row">
-                                            <div class="resume-skill-name">Python</div>
-                                            <div class="resume-skill-bar">
-                                                <div class="resume-skill-fill" style="width: 70%;"></div>
-                                            </div>
-                                            <div class="resume-skill-level">掌握</div>
-                                        </div>
-                                        <div class="resume-skill-row">
-                                            <div class="resume-skill-name">微信小程序</div>
-                                            <div class="resume-skill-bar">
-                                                <div class="resume-skill-fill" style="width: 75%;"></div>
-                                            </div>
-                                            <div class="resume-skill-level">掌握</div>
-                                        </div>
-                                        <div class="resume-skill-row">
-                                            <div class="resume-skill-name">AI工具应用</div>
-                                            <div class="resume-skill-bar">
-                                                <div class="resume-skill-fill" style="width: 85%;"></div>
-                                            </div>
-                                            <div class="resume-skill-level">熟练</div>
-                                        </div>
-                                        <div class="resume-skill-row">
-                                            <div class="resume-skill-name">PS / 剪映</div>
-                                            <div class="resume-skill-bar">
-                                                <div class="resume-skill-fill" style="width: 80%;"></div>
-                                            </div>
-                                            <div class="resume-skill-level">熟练</div>
-                                        </div>
-                                    </div>
-
-                                    
-                                    <div class="vue-card">
-                                        <div class="resume-section-title">项目经验</div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-time">2024.01 - 至今</div>
-                                            <div class="timeline-title">个人品牌主页 · 独立开发</div>
-                                            <div class="timeline-desc">
-                                                独立设计并开发响应式个人主页，融合 Canvas 粒子动画、Vue 3 动态路由、毛玻璃 UI 等交互效果，
-                                                完整展示个人技术栈与审美风格，作为求职与技术交流的名片。
-                                            </div>
-                                        </div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-time">2023.09 - 2023.12</div>
-                                            <div class="timeline-title">校园二手交易小程序 · 核心开发</div>
-                                            <div class="timeline-desc">
-                                                使用微信小程序原生框架 + 云开发，实现商品发布、搜索筛选、在线聊天、订单管理等核心功能。
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    
-                                    <div class="vue-card">
-                                        <div class="resume-section-title">自我评价</div>
-                                        <div class="vue-card-desc">
-                                            1. 具备扎实的Web前端开发基础，有企业实习项目经验，熟悉完整的前端开发流程与协作规范；<br />
-                                            2. 复合能力突出，覆盖编码开发、视觉设计、AI增效、视频剪辑四大板块，可独立完成从需求到交付的全链路工作；<br />
-                                            3. 学习能力强，对新技术保持高度热情，持续关注前端与AI领域的发展趋势，善于将新工具落地到实际工作中提效；<br />
-                                            4. 工作态度认真负责，注重代码质量与用户体验，具备良好的沟通能力与团队协作意识。
-                                        </div>
-                                    </div>
-                                </div>
+                                <resume-panel v-if="currentTab === 4" :key="4"></resume-panel>
 
                             </transition>
                         </div>
@@ -2322,6 +2104,11 @@
         </transition>
     </div>
 
+    <!-- Vue 组件脚本（必须在 Vue CDN 之后、index.js 之前加载） -->
+    <script src="components/AboutPanel.js"></script>
+    <script src="components/SkillsPanel.js"></script>
+    <script src="components/ContactPanel.js"></script>
+    <script src="components/ResumePanel.js"></script>
     <script>
 /**
          * ============================================================

@@ -465,7 +465,7 @@
          * ============================================================
          */
         if (typeof Vue !== 'undefined') {
-            const vueApp = Vue.createApp({
+            const app = Vue.createApp({
                 data() {
                     return {
                         visible: false,
@@ -476,50 +476,11 @@
                             { id: 3, name: '联系方式' },
                             { id: 4, name: '个人简历' },
                         ],
-                        skillGroups: [
-                            {
-                                category: '编码开发',
-                                description: '掌握前后端核心技术栈，可独立完成Web项目从页面到接口的完整开发。',
-                                skills: ['HTML5/CSS3', 'JavaScript', 'Vue 3', 'Python', 'C++', 'Bootstrap',
-                                    '微信小程序', 'MySQL'
-                                ],
-                            },
-                            {
-                                category: '视觉交互',
-                                description: '具备设计审美与界面落地能力，兼顾视觉质感与用户体验。',
-                                skills: ['Photoshop', 'Illustrator', 'UI设计', '响应式布局', '交互动效', '用户体验优化'],
-                            },
-                            {
-                                category: 'AI增效',
-                                description: '熟练运用主流AI工具与模型提升开发创作效率，可落地自动化工作流。',
-                                skills: ['AI图像生成', 'AI文案优化', '自动化脚本', '批量处理', '提示词工程', 'AI工具二次开发', 'AI Agent', 'Claude', 'Codex'],
-                            },
-                            {
-                                category: '视频剪辑',
-                                description: '可独立完成产品宣传、项目演示等场景的视频制作。',
-                                skills: ['剪映专业版', '卡点剪辑', '字幕制作', '转场动效', '宣传短片', '演示视频'],
-                            },
-                            {
-                                category: '音乐创作',
-                                description: '热爱吉他演奏与音乐制作，具备编曲、录音、混音等音频创作能力。',
-                                skills: ['指弹吉他', '电吉他', '编曲', '混音', '作曲', '录音'],
-                            },
-                        ],
-                        contacts: [
-                            { label: '电子邮箱', value: '2743591998@qq.com', link: 'mailto:2743591998@qq.com' },
-                            { label: 'GitHub', value: 'github.com/LuHeJ/index.git', link: 'https://github.com/LuHeJ/index.git' },
-                            { label: '微信', value: 'xiaoyiyanyu', link: null },
-                            { label: '所在城市', value: '中国 · 河北石家庄', link: null },
-                        ],
                     };
                 },
                 computed: {
                     currentTabData() {
                         return this.tabs.find(t => t.id === this.currentTab) || this.tabs[0];
-                    },
-                                        /** @returns {number} 所有技能分组的标签总数 */
-                    totalSkillCount() {
-                        return this.skillGroups.reduce((sum, group) => sum + group.skills.length, 0);
                     },
                 },
                 methods: {
@@ -562,7 +523,13 @@
                 },
             });
 
-            const vueInstance = vueApp.mount('#vue-app');
+            // 注册 4 个面板组件
+            if (typeof AboutPanel   !== 'undefined') app.component('about-panel',   AboutPanel);
+            if (typeof SkillsPanel  !== 'undefined') app.component('skills-panel',  SkillsPanel);
+            if (typeof ContactPanel !== 'undefined') app.component('contact-panel', ContactPanel);
+            if (typeof ResumePanel  !== 'undefined') app.component('resume-panel',  ResumePanel);
+
+            const vueInstance = app.mount('#vue-app');
             window.vueApp = vueInstance;
         } else {
             console.error('❌ Vue 3 未能加载，请检查网络或CDN地址');

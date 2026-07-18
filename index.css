@@ -1814,3 +1814,70 @@
             }
             #particle-canvas { display: none; }
         }
+
+        /* ===== 新美化：面板卡片错位入场动画 =====
+           [作用] 每个 .panel-card 卡片按 --i 自定义属性错时淡入上浮。
+           [怎么做] animation-delay 用 calc(var(--i) * 0.08s) 递增，
+                    每个卡片比前一个晚 80ms 入场。
+           [为什么] 瀑布式入场比同时出现更有层次感，80ms 间隔刚好可感知但不拖沓。 */
+        .panel-card {
+            animation: cardSlideUp 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+            animation-delay: calc(var(--i, 0) * 0.08s);
+        }
+        @keyframes cardSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 新美化：标签渐变 hover =====
+           [作用] .vue-tag hover 时背景从暗红变为亮红渐变，文字变白。 */
+        .vue-tag {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .vue-tag:hover {
+            background: linear-gradient(135deg, rgba(200, 50, 50, 0.6), rgba(160, 30, 30, 0.5));
+            border-color: rgba(230, 70, 70, 0.65);
+            box-shadow: 0 0 14px rgba(200, 45, 45, 0.5);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* ===== 新美化：技能进度条扫光动画 =====
+           [作用] 简历页技能条的填充部分有从左到右的微光扫过效果。 */
+        .resume-skill-fill {
+            position: relative;
+            overflow: hidden;
+        }
+        .resume-skill-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2.5s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0%, 100% { left: -100%; }
+            50% { left: 120%; }
+        }
+
+        /* ===== 新美化：时间线圆点脉冲 =====
+           [作用] 时间线左侧圆点带有呼吸式脉冲动画，暗示"进行中"的生命力。 */
+        .timeline-item::before {
+            animation: timelinePulse 2s ease-in-out infinite;
+        }
+        @keyframes timelinePulse {
+            0%, 100% {
+                box-shadow: 0 0 6px rgba(200, 60, 60, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 16px rgba(220, 70, 70, 0.8), 0 0 28px rgba(200, 50, 50, 0.3);
+            }
+        }
