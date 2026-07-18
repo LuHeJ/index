@@ -358,28 +358,32 @@
          * @returns {void}
          */
         function enterSite() {
+            // 幂等保护：Vue 区域已可见时不重复触发
             if (window.vueApp && window.vueApp.visible) return;
+            // 遮罩从左侧滑入（800ms CSS transition）
             if (slideMask) slideMask.classList.add('active');
-            setTimeout(() => {
-                if (window.vueApp) {
-                    window.vueApp.show();
-                }
-            }, 800);
+            // Vue 立即显示于遮罩上方（z-index 200 > 100），
+            // 自身 translateX 入场动画 550ms 同步播放，消除黑屏等待
+            if (window.vueApp) {
+                window.vueApp.show();
+            }
         }
 
                 /**
          * 关闭 Vue 覆盖层
-         * @description 1) 隐藏 Vue overlay (触发 400ms leave 动画)
-         *              2) 延迟 450ms 后移除遮罩 (略长于 leave 动画以确保不闪屏)
+         * @description 遮罩和 Vue 同时开始退出：
+         *              遮罩向右滑出（800ms），Vue 向左滑出（400ms leave），
+         *              Vue z-index 200 确保在遮罩上方消失，无黑屏间隙。
          * @returns {void}
          */
         function closeVueOverlay() {
+            // 遮罩立即开始滑出（800ms CSS transition）
+            if (slideMask) slideMask.classList.remove('active');
+            // Vue 同时开始隐藏（400ms leave 动画），
+            // z-index 200 确保在遮罩上方，遮罩滑出时 Vue 已完成消失
             if (window.vueApp && window.vueApp.visible) {
                 window.vueApp.hide();
             }
-            setTimeout(() => {
-                if (slideMask) slideMask.classList.remove('active');
-            }, 450);
         }
 
         
