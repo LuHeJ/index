@@ -158,7 +158,7 @@
                                 <tool-panel v-else-if="currentTab === 6" />
                                 <wiki-panel v-else-if="currentTab === 7" />
                                 <codelab-panel v-else-if="currentTab === 8" />
-                                <trends-panel v-else-if="currentTab === 9" />
+                                <funfacts-panel v-else-if="currentTab === 9" />
                         </div>
                     </div>
                 </div>
@@ -326,15 +326,16 @@ git commit --amend -m &quot;new message&quot;</code></pre></div>
   </div>`
 };
 
-// ===== 新面板：前端趋势 =====
-const TrendsPanel = {
-  name: 'TrendsPanel',
-  template: `<div class="trends-panel">
-    <div class="vue-card panel-card" style="--i:0"><div class="vue-card-title">WebAssembly (WASM)</div><div class="vue-card-desc">浏览器原生支持的二进制指令格式，允许 C/C++/Rust 等语言在 Web 上以接近原生速度运行。游戏引擎、图像处理、科学计算等高性能场景的首选方案。</div><div class="vue-tag-row"><span class="vue-tag">性能</span><span class="vue-tag">WASM</span><span class="vue-tag">🔥 热门</span></div></div>
-    <div class="vue-card panel-card" style="--i:1"><div class="vue-card-title">CSS Container Queries</div><div class="vue-card-desc">基于父容器尺寸而非视口尺寸的响应式方案。组件可以根据自己所在的容器大小调整样式，真正实现「可复用组件」。2023 年起主流浏览器全面支持。</div><div class="vue-tag-row"><span class="vue-tag">CSS</span><span class="vue-tag">响应式</span><span class="vue-tag">✅ 已稳定</span></div></div>
-    <div class="vue-card panel-card" style="--i:2"><div class="vue-card-title">View Transitions API</div><div class="vue-card-desc">浏览器原生页面过渡动画 API，无需 JS 动画库即可实现 SPA 页面间的平滑过渡。支持 MPA 和 SPA 两种模式，Chrome 111+ 已支持。</div><div class="vue-tag-row"><span class="vue-tag">浏览器API</span><span class="vue-tag">动画</span><span class="vue-tag">🆕 新特性</span></div></div>
-    <div class="vue-card panel-card" style="--i:3"><div class="vue-card-title">AI 辅助编程</div><div class="vue-card-desc">LLM 驱动的代码生成与审查工具正在改变开发流程。从代码补全到全函数生成，从单元测试到重构建议，AI 正在成为开发者的标配工具。</div><div class="vue-tag-row"><span class="vue-tag">AI</span><span class="vue-tag">开发工具</span><span class="vue-tag">🚀 高速发展</span></div></div>
-    <div class="vue-card panel-card" style="--i:4"><div class="vue-card-title">边缘计算与 Serverless</div><div class="vue-card-desc">代码运行在 CDN 边缘节点，全球低延迟。Cloudflare Workers、Vercel Edge Functions、Deno Deploy 等平台让开发者无需管理服务器即可部署全球应用。</div><div class="vue-tag-row"><span class="vue-tag">Serverless</span><span class="vue-tag">边缘计算</span><span class="vue-tag">☁️ 趋势</span></div></div>
+// ===== 新面板：奇闻趣事 =====
+const FunfactsPanel = {
+  name: 'FunfactsPanel',
+  template: `<div class="funfacts-panel">
+    <div class="vue-card panel-card" style="--i:0"><div class="vue-card-title">🐙 章鱼有三颗心脏</div><div class="vue-card-desc">章鱼拥有三颗心脏：一颗主心脏负责将血液输送到全身，另外两颗鳃心专门将血液泵入鳃部进行气体交换。当章鱼游泳时，主心脏会停止跳动。</div><div class="vue-tag-row"><span class="vue-tag">生物</span><span class="vue-tag">海洋</span></div></div>
+    <div class="vue-card panel-card" style="--i:1"><div class="vue-card-title">⚡ 闪电的温度比太阳表面还高</div><div class="vue-card-desc">一道闪电的温度可达 30,000°C，是太阳表面温度（约 5,500°C）的五倍以上。这也是为什么闪电能在瞬间将空气中的氮气转化为植物可吸收的氮化物。</div><div class="vue-tag-row"><span class="vue-tag">自然</span><span class="vue-tag">气象</span></div></div>
+    <div class="vue-card panel-card" style="--i:2"><div class="vue-card-title">🍌 香蕉具有放射性</div><div class="vue-card-desc">香蕉富含钾元素，其中约 0.01% 是放射性同位素钾-40。不过需要一口气吃下约 1000 万根香蕉才会达到致死剂量——远早于辐射伤害之前你就会先撑死。</div><div class="vue-tag-row"><span class="vue-tag">科学</span><span class="vue-tag">食物</span></div></div>
+    <div class="vue-card panel-card" style="--i:3"><div class="vue-card-title">🏔️ 珠峰每年长高 4 毫米</div><div class="vue-card-desc">由于印度板块持续向北挤压欧亚板块，喜马拉雅山脉仍在缓慢抬升。珠穆朗玛峰每年约增高 4 毫米——差不多是你指甲生长的速度。</div><div class="vue-tag-row"><span class="vue-tag">地理</span><span class="vue-tag">地质</span></div></div>
+    <div class="vue-card panel-card" style="--i:4"><div class="vue-card-title">💡 灯泡最古老的还在亮</div><div class="vue-card-desc">加州利弗莫尔消防站的「百年灯泡」自 1901 年安装以来几乎从未熄灭，已持续亮了超过 120 年。它是一枚手工吹制的碳丝灯泡，功率仅 4 瓦。</div><div class="vue-tag-row"><span class="vue-tag">历史</span><span class="vue-tag">发明</span></div></div>
+    <div class="vue-card panel-card" style="--i:5"><div class="vue-card-title">🐝 蜜蜂能识别人脸</div><div class="vue-card-desc">研究表明蜜蜂具有惊人的视觉处理能力——它们可以通过排列组合的方式识别人脸特征，就像我们识别不同的花朵图案一样。蜂群甚至能通过「跳舞」传递精确的导航信息。</div><div class="vue-tag-row"><span class="vue-tag">动物</span><span class="vue-tag">研究</span></div></div>
   </div>`
 };
 
@@ -345,7 +346,7 @@ const currentTab = ref(1)
 const tabs = [
   { id: 1, name: '关于我' }, { id: 2, name: '技能领域' },
   { id: 3, name: '联系方式' }, { id: 4, name: '个人简历' },
-  { id: 5, name: '灵感墙' },   { id: 6, name: '工具箱' },   { id: 7, name: '技术百科' },   { id: 8, name: 'Code Lab' },   { id: 9, name: '前端趋势' },
+  { id: 5, name: '灵感墙' },   { id: 6, name: '工具箱' },   { id: 7, name: '技术百科' },   { id: 8, name: 'Code Lab' },   { id: 9, name: '奇闻趣事' },
 ]
 const currentTabData = computed(() => tabs.find(t => t.id === currentTab.value) || tabs[0])
 const panelMap = { 1: AboutPanel, 2: SkillsPanel, 3: ContactPanel, 4: ResumePanel }
