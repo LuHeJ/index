@@ -157,18 +157,12 @@
                         </div>
                         <div class="vue-content-scroll">
                             <transition name="panel-fade" mode="out-in">
-                                
-                                <about-panel v-if="currentTab === 1" :key="1"></about-panel>
-
-                                
-                                <skills-panel v-if="currentTab === 2" :key="2"></skills-panel>
-
-                                
-                                <contact-panel v-if="currentTab === 3" :key="3"></contact-panel>
-
-                                
-                                <resume-panel v-if="currentTab === 4" :key="4"></resume-panel>
-
+                                <div :key="currentTab">
+                                <about-panel v-if="currentTab === 1"></about-panel>
+                                <skills-panel v-if="currentTab === 2"></skills-panel>
+                                <contact-panel v-if="currentTab === 3"></contact-panel>
+                                <resume-panel v-if="currentTab === 4"></resume-panel>
+                                </div>
                             </transition>
                         </div>
                     </div>
