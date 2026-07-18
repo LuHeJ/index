@@ -1,0 +1,2983 @@
+<!DOCTYPE html>
+<!--
+  @file standalone.html
+  @description 鹿禾(LuHe) 个人主页 — 自包含版本，双击即可打开
+               内联全部 CSS + JS，零依赖（除 Vue CDN）
+  @author LuHe
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LuHe / 个人主页</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+/* ===== 设计令牌 (Design Tokens) ===== */
+:root {
+            --bg-deep: #0a0505;
+            --red-dark: #882222;
+            --red-mid: #b43838;
+            --red-bright: #c84040;
+            --red-light: #e08080;
+            --red-pale: #f0d8d8;
+            --text-dim: rgba(210, 135, 135, 0.55);
+            --text-mid: rgba(195, 115, 115, 0.75);
+            --border-soft: rgba(180, 60, 60, 0.4);
+            --border-glow: rgba(220, 70, 70, 0.7);
+            --shadow-btn: 0 0 18px rgba(180, 35, 35, 0.35);
+            --shadow-btn-hover: 0 0 30px rgba(210, 45, 45, 0.55);
+            --glass-bg: rgba(25, 8, 8, 0.6);
+            --glass-border: rgba(120, 35, 35, 0.35);
+            --transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-deep);
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            color: #fff;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        
+        /* ===== 双图融合背景 (z-0) =====
+   [作用] 将两张人物/风景照片以对角线方式融合为全屏背景。
+   [怎么做] 利用 CSS clip-path: polygon() 绘制对角线裁剪区域：
+           左图占据 0%→62% 到 0%→38% 的梯形区域，
+           右图占据 62%→100% 到 38%→100% 的梯形区域。
+           两者中间留 1px 缝隙（calc(62% + 1px)）形成微妙的视觉分割线。
+   [为什么] 不使用简单的左右并排：
+     - 对角线比垂直线更有设计感和动感
+     - 两张图融合成一体，而非割裂的两栏
+     - 62:38 的黄金比例分割比 50:50 更具美感
+     - 右图 background-size: 120% 放大裁剪掉右下角水印
+   ============================================================ */
+        .bg-images {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .bg-images .bg-left {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('g1.jpg') center/cover no-repeat;
+            background-size: cover;
+            background-position: 100% center;
+            
+            clip-path: polygon(0 0, 62% 0, 38% 100%, 0 100%);
+            filter: brightness(0.35) saturate(0.5);
+        }
+        .bg-images .bg-right {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('g2.jpg') center/cover no-repeat;
+            background-size: 120%;
+            background-position: 40% center;
+            
+            clip-path: polygon(calc(62% + 1px) 0, 100% 0, 100% 100%, calc(38% + 1px) 100%);
+            filter: brightness(0.35) saturate(0.5);
+        }
+
+        
+        /* ===== 粒子动画画布 (z-1) =====
+   [作用] 提供 HTML5 Canvas 元素作为粒子系统的绘制表面。
+   [怎么做] fixed 定位铺满全屏，pointer-events: none 使鼠标事件穿透到下层 UI。
+   [为什么] pointer-events: none 是关键 — Canvas 覆盖在所有 UI 之上，
+           若不穿透则所有按钮、链接都无法点击。粒子纯装饰，不应阻挡交互。
+   ============================================================ */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ===== 暗角遮罩 (z-2) =====
+   [作用] 通过径向渐变在画面四角和边缘叠加暗色，模仿摄影中的暗角(vignette)效果。
+   [怎么做] 两层 radial-gradient：
+           - 右上角暖色光晕 (rgba(80,20,20,0.25) -> transparent)
+           - 中心向边缘的暗色过渡 (transparent -> rgba(0,0,0,0.7))
+   [为什么] 暗角能将视线引导至画面中央，同时柔化背景边缘，
+           让固定位置的 UI 元素（四周）有更好的对比度。
+   ============================================================ */
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse at top right, rgba(80, 20, 20, 0.25) 0%, transparent 50%),
+                radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
+        }
+
+        /* ===== 网格纹理背景 (z-1) =====
+   [作用] 叠加一层 60px 间距的网格线，增加科技感和空间深度。
+   [怎么做] 使用 CSS background-image 分别绘制水平和垂直的 1px 半透明线。
+           两条 linear-gradient 叠加形成十字网格。
+   [为什么] 纯色背景过于平面，网格纹理以极低成本（纯 CSS，零 JS）
+           增加了视觉层次和科技氛围，且不消耗额外 HTTP 请求。
+   ============================================================ */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(80, 30, 30, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(80, 30, 30, 0.06) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        
+        /* ===== 左上角 Logo 组件 =====
+   [作用] 固定于左上角的品牌标识：红点 + LuHe / 个人主页。
+   [怎么做] flex 布局水平排列 dot + luhe + slash + miaow 四个 span。
+           dot 使用 border-radius: 50% 变圆 + box-shadow 发光 + 脉动动画。
+   [为什么] 放在左上角符合用户视觉扫描习惯（F 型阅读模式），
+           红色发光点提供品牌记忆点，overlay-active 类与欢迎覆盖层联动隐藏。
+   ============================================================ */
+        .logo {
+            position: fixed;
+            top: 32px;
+            left: 24px;
+            z-index: 10;
+            font-size: 14px;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .logo.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .logo .dot {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            background: #c83c3c;
+            border-radius: 50%;
+            margin-right: 5px;
+            box-shadow: 0 0 8px #c83c3c, 0 0 16px rgba(200, 50, 50, 0.4);
+            animation: dotPulse 2.5s ease-in-out infinite;
+        }
+        /* [红点脉动动画] 作用: 让 Logo 前的红点以 2.5s 周期呼吸式脉动。
+           怎么做: 通过 box-shadow 在强弱之间循环过渡。
+           为什么: 脉动暗示"活着"和"在线"，给品牌注入生命力。
+           2.5s 比常见 1-2s 略慢，显得更沉稳不急促。 */
+        @keyframes dotPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 5px #c83c3c, 0 0 10px rgba(200, 50, 50, 0.25);
+            }
+            50% {
+                box-shadow: 0 0 12px #e05050, 0 0 22px rgba(220, 60, 60, 0.5), 0 0 40px rgba(180, 35, 35, 0.12);
+            }
+        }
+        .logo .luhe {
+            color: #e8d0d0;
+            transition: color 0.4s ease;
+        }
+        .logo .slash {
+            color: #884444;
+            margin: 0 1px;
+        }
+        .logo .miaow {
+            color: #c85050;
+            transition: color 0.4s ease;
+        }
+        .logo:hover .luhe {
+            color: #f5e5e5;
+        }
+        .logo:hover .miaow {
+            color: #e86868;
+            text-shadow: 0 0 10px rgba(200, 50, 50, 0.5);
+        }
+
+        
+        /* ===== 右上角面板容器 ===== */
+        .top-right-panel {
+            position: fixed;
+            top: 28px;
+            right: 28px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .top-right-panel.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        
+        /* ===== 音乐控制器 (毛玻璃胶囊) =====
+   [作用] 右上角的背景音乐播放/暂停 + 音量调节控件。
+   [怎么做] 毛玻璃胶囊容器（backdrop-filter: blur(14px)）内含：
+           - 圆形播放按钮（34px，带 pulse 动画）
+           - range 音量滑块（自定义 webkit 样式匹配红色主题）
+   [为什么] 放在右上角不干扰主要内容区域，毛玻璃效果与整体 UI 风格统一。
+           使用原生 <input type="range"> 而非自定义 slider 因为：
+             - 无障碍（屏幕阅读器原生支持）
+             - 键盘操作（方向键调节）
+             - 移动端 touch 事件原生支持
+   ============================================================ */
+        .music-controller {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            background: rgba(18, 5, 5, 0.45);
+            border: 1px solid rgba(160, 40, 40, 0.28);
+            border-radius: 26px;
+            padding: 7px 15px;
+            backdrop-filter: blur(14px) saturate(1.1);
+            -webkit-backdrop-filter: blur(14px) saturate(1.1);
+            transition: all var(--transition-smooth);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        }
+        .music-controller:hover {
+            border-color: rgba(200, 55, 55, 0.5);
+            box-shadow: 0 4px 28px rgba(150, 25, 25, 0.3),
+                0 0 22px rgba(160, 30, 30, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .music-play-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(110, 28, 28, 0.6) 0%, rgba(70, 15, 15, 0.7) 100%);
+            border: 1.5px solid rgba(180, 50, 50, 0.5);
+            color: #f0d0d0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: all var(--transition-smooth);
+            flex-shrink: 0;
+            position: relative;
+            box-shadow: 0 0 10px rgba(160, 30, 30, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            letter-spacing: 0;
+        }
+        .music-play-btn:focus-visible {
+            outline: 2px solid var(--red-bright);
+            outline-offset: 3px;
+        }
+        .music-play-btn:hover {
+            background: linear-gradient(135deg, rgba(150, 35, 35, 0.7) 0%, rgba(95, 20, 20, 0.8) 100%);
+            border-color: rgba(220, 65, 65, 0.75);
+            box-shadow: 0 0 20px rgba(200, 40, 40, 0.45), 0 0 40px rgba(180, 30, 30, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            color: #fff;
+            transform: scale(1.06);
+        }
+        .music-play-btn:active {
+            transform: scale(0.9);
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 6px rgba(200, 40, 40, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .music-play-btn.playing {
+            animation: musicPulse 2.4s ease-in-out infinite;
+            border-color: rgba(215, 60, 60, 0.7);
+            box-shadow: 0 0 16px rgba(200, 45, 45, 0.5), 0 0 32px rgba(180, 30, 30, 0.25);
+            background: linear-gradient(135deg, rgba(140, 30, 30, 0.65) 0%, rgba(90, 18, 18, 0.75) 100%);
+        }
+        /* [播放中脉动动画] 作用: 播放时按钮红色外发光以 2.4s 周期呼吸。
+           为什么: 视觉反馈让用户明确知道音乐正在播放，
+           即使静音或音量极低也能通过 UI 识别播放状态。 */
+        @keyframes musicPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 12px rgba(200, 45, 45, 0.4), 0 0 24px rgba(180, 30, 30, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 24px rgba(225, 55, 55, 0.7), 0 0 48px rgba(200, 40, 40, 0.35), 0 0 60px rgba(180, 30, 30, 0.15);
+            }
+        }
+        .music-play-btn.playing:hover {
+            box-shadow: 0 0 28px rgba(230, 60, 60, 0.75), 0 0 52px rgba(200, 40, 40, 0.4);
+        }
+        .music-play-btn .note-icon {
+            display: inline-block;
+            transition: all 0.35s ease;
+            line-height: 1;
+            font-style: normal;
+        }
+        .music-play-btn.playing .note-icon {
+            animation: noteBounce 0.9s ease-in-out infinite;
+        }
+        /* [音符跳动动画] 作用: 播放时音符图标 ♪ 以 0.9s 周期轻微弹跳。
+           怎么做: translateY 在 0→-4px→1px 之间循环，配合 scale 缩放。
+           为什么: 模拟音符在五线谱上跳动的感觉，增强拟物趣味性。 */
+        @keyframes noteBounce {
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+            35% {
+                transform: translateY(-4px) scale(1.1);
+            }
+            65% {
+                transform: translateY(1px) scale(0.95);
+            }
+        }
+
+        /* --- 音量滑块 --- */
+        .volume-slider-wrap {
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            max-width: 80px;
+            opacity: 1;
+        }
+        .volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 75px;
+            height: 5px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #661a1a 0%, #a03535 60%, #c84040 100%);
+
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .volume-slider:hover {
+            background: linear-gradient(90deg, #7a2020 0%, #b84040 60%, #d85050 100%);
+            box-shadow: 0 0 8px rgba(200, 40, 40, 0.3);
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #f0a0a0 0%, #d06060 50%, #a03030 100%);
+            border: 2px solid #c84040;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(200, 45, 45, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        .volume-slider::-webkit-slider-thumb:hover {
+            background: radial-gradient(circle at 40% 35%, #f8b8b8 0%, #e07070 50%, #b83838 100%);
+            border-color: #e06060;
+            box-shadow: 0 0 18px rgba(220, 55, 55, 0.7), 0 2px 6px rgba(0, 0, 0, 0.35);
+            transform: scale(1.15);
+        }
+        .volume-slider::-moz-range-thumb {
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #f0a0a0 0%, #d06060 50%, #a03030 100%);
+            border: 2px solid #c84040;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(200, 45, 45, 0.5);
+        }
+        .volume-slider::-moz-range-track {
+            height: 5px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #661a1a 0%, #a03535 60%, #c84040 100%);
+        }
+
+        
+        /* ===== 左下角欢迎区 =====
+   [作用] 左下角的欢迎文字 + "详情主页→"按钮 + SLIDE RIGHT TO ENTER 提示。
+   [怎么做] fixed 定位在左下角，enter-btn 包含 ::before 扫光伪元素。
+   [为什么] 右下角已被个人信息卡占据，左下角是最佳放置 CTA 按钮的位置，
+           与左上角 Logo 形成对角线平衡。
+   ============================================================ */
+        .welcome-area {
+            position: fixed;
+            bottom: 80px;
+            left: 24px;
+            z-index: 10;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .welcome-area.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .welcome-text {
+            font-size: 26px;
+            font-weight: 400;
+            color: #f0e0e0;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(200, 60, 60, 0.3);
+            transition: text-shadow 0.5s ease;
+        }
+        .welcome-area:hover .welcome-text {
+            text-shadow: 0 0 28px rgba(210, 65, 65, 0.45), 0 0 50px rgba(180, 40, 40, 0.2);
+        }
+
+        .enter-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 11px;
+            padding: 11px 26px;
+            background: linear-gradient(135deg, rgba(120, 28, 28, 0.4) 0%, rgba(70, 14, 14, 0.5) 100%);
+            border: 1.5px solid rgba(180, 55, 55, 0.45);
+            border-radius: 6px;
+            color: #f0d8d8;
+            font-size: 15px;
+            cursor: pointer;
+            letter-spacing: 3px;
+            transition: all var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.3);
+
+        }
+        .enter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(210, 55, 55, 0.35), rgba(255, 180, 180, 0.15), transparent);
+            transition: left 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 0;
+        }
+        .enter-btn:hover::before {
+            left: 100%;
+        }
+        .enter-btn:hover {
+            background: linear-gradient(135deg, rgba(155, 38, 38, 0.55) 0%, rgba(95, 20, 20, 0.6) 100%);
+            border-color: rgba(225, 75, 75, 0.7);
+            box-shadow: 0 0 22px rgba(180, 35, 35, 0.4), 0 4px 18px rgba(0, 0, 0, 0.4);
+            color: #fff;
+            letter-spacing: 4px;
+            transform: translateY(-2px);
+        }
+        .enter-btn:active {
+            transform: scale(0.95);
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 8px rgba(180, 35, 35, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .enter-btn .arrow {
+            transition: all 0.35s ease;
+            position: relative;
+            z-index: 1;
+            font-size: 16px;
+        }
+        .enter-btn:hover .arrow {
+            transform: translateX(5px);
+            text-shadow: 0 0 8px rgba(255, 200, 200, 0.6);
+        }
+        .enter-btn span {
+            position: relative;
+            z-index: 1;
+        }
+        .enter-hint {
+            margin-top: 9px;
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            transition: color 0.4s ease;
+        }
+        .welcome-area:hover .enter-hint {
+            color: rgba(220, 130, 130, 0.6);
+        }
+
+        
+        /* ===== 右下角个人信息卡 =====
+   [作用] 右下角毛玻璃卡片展示个人信息：PROFILE 标签、姓名 LuHe、
+          个人描述、LOCATION、ORIENTATION。
+   [怎么做] fixed 定位在右下角，backdrop-filter: blur(18px) 实现毛玻璃，
+           多层 box-shadow 营造深度和顶部内发光。
+   [为什么] 毛玻璃效果让卡片与背景融为一体而非生硬悬浮，
+           blur(18px) 比音乐控制器的 14px 更大，因为卡片面积更大需要更强模糊。
+   ============================================================ */
+        .profile-card {
+            position: fixed;
+            bottom: 115px;
+            right: 80px;
+            z-index: 10;
+            background: rgba(18, 5, 5, 0.5);
+            border: 1px solid rgba(180, 45, 45, 0.22);
+            border-radius: 20px;
+            padding: 32px 38px 28px 38px;
+            min-width: 350px;
+            max-width: 460px;
+            backdrop-filter: blur(18px) saturate(1.15);
+            -webkit-backdrop-filter: blur(18px) saturate(1.15);
+            box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03),
+                0 0 0 1px rgba(180, 40, 40, 0.06);
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+            text-align: left;
+        }
+        .profile-card.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .profile-card:hover {
+            background: rgba(25, 7, 7, 0.6);
+            border-color: rgba(200, 55, 55, 0.42);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55),
+                0 0 28px rgba(180, 35, 35, 0.14),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transform: translateY(-3px);
+            transition: all var(--transition-smooth);
+        }
+
+        .profile-label {
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            font-size: 15px;
+            letter-spacing: 3.5px;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: left;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .profile-name {
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            font-size: 40px;
+            letter-spacing: 3px;
+            color: #ffffff;
+            text-align: left;
+            margin-bottom: 12px;
+            line-height: 1;
+            text-shadow: 0 0 16px rgba(255, 255, 255, 0.4);
+        }
+
+        .profile-desc {
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            font-size: 15px;
+            letter-spacing: 2.5px;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: left;
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        .profile-info-row {
+            margin-bottom: 8px;
+            text-align: left;
+        }
+        .profile-info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .profile-info-label {
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            font-size: 14px;
+            letter-spacing: 3.5px;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: left;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .profile-info-value {
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.9);
+            text-align: left;
+            line-height: 1.3;
+        }
+
+        
+        /* ===== 底部状态栏 =====
+   [作用] 横跨底部的场景标签 (SCENCE 01) + 呼吸式进度条。
+   [怎么做] flex 布局：左侧文字 + 中间 flex:1 进度条。
+           进度条填充使用 pulseGlow 动画制造呼吸发光效果。
+   [为什么] 进度条让底部不空旷，呼吸动画让页面有"活着"的感觉，
+           3s 周期足够缓慢不分散注意力。
+   ============================================================ */
+        .status-bar {
+            position: fixed;
+            bottom: 16px;
+            left: 24px;
+            right: 24px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 10px;
+            color: var(--text-mid);
+            letter-spacing: 1.5px;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .status-bar.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .status-bar .progress-track {
+            flex: 1;
+            height: 2px;
+            background: rgba(80, 30, 30, 0.25);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+        .status-bar .progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #882222, #c84040, #e05858);
+            box-shadow: 0 0 10px rgba(200, 60, 60, 0.5);
+            border-radius: 2px;
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+        /* [进度条呼吸动画] 作用: 底部进度条以 3s 周期在 50% 和 100% 透明度间呼吸。
+           为什么: 模拟系统待机状态，暗示"一切正常运转中"。 */
+        @keyframes pulseGlow {
+            0%,
+            100% {
+                opacity: 0.5;
+                box-shadow: 0 0 8px rgba(200, 60, 60, 0.35);
+            }
+            50% {
+                opacity: 1;
+                box-shadow: 0 0 16px rgba(210, 65, 65, 0.55), 0 0 28px rgba(180, 40, 40, 0.18);
+            }
+        }
+
+        
+        /* ===== 右侧装饰线 ===== */
+        .side-line {
+            position: fixed;
+            top: 15%;
+            right: 40px;
+            width: 1px;
+            height: 70%;
+            background: linear-gradient(to bottom, transparent, rgba(120, 40, 40, 0.25), rgba(180, 50, 50, 0.15), transparent);
+            z-index: 3;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .side-line.overlay-active {
+            opacity: 0;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        
+        /* ===== 右下角控制按钮组 ===== */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .controls.overlay-active {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .control-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(180, 100, 100, 0.45);
+            cursor: pointer;
+            transition: all var(--transition-smooth);
+            font-size: 14px;
+            background: rgba(30, 8, 8, 0.4);
+            border: 1px solid rgba(100, 30, 30, 0.25);
+            position: relative;
+
+        }
+        .control-btn:hover {
+            color: #e87878;
+            background: rgba(60, 15, 15, 0.6);
+            border-color: rgba(180, 45, 45, 0.55);
+            box-shadow: 0 0 16px rgba(180, 35, 35, 0.4),
+                0 0 32px rgba(150, 25, 25, 0.18),
+                0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        .control-btn:active {
+            transform: scale(0.88);
+            transition: transform 0.1s ease;
+        }
+
+        
+        /* ===== 滑动过渡遮罩 (z-100) =====
+   [作用] 点击"向右滑动进入"后，一块深色遮罩从左侧滑入覆盖全屏，
+          遮罩完全覆盖后（800ms）才显示 Vue 内容区域。
+   [怎么做] fixed 定位 left: -100%（初始隐藏在左侧），
+           .active 时 left: 0，通过 transition: left 0.8s 产生滑动效果。
+   [为什么] 这个遮罩起到"幕布"作用：
+     - 视觉上创造从主页→详情页的过渡感
+     - 掩盖 Vue 挂载和渲染的瞬间（可能有短暂的空白/闪烁）
+     - 800ms 与 CSS cubic-bezier(0.7,0,0.3,1) 配合创造"加速滑入"的感觉
+   ============================================================ */
+        .slide-mask {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            /* 半透明深红底 + 毛玻璃模糊，替代纯黑遮罩 */
+            background: rgba(10, 5, 5, 0.75);
+            backdrop-filter: blur(16px) saturate(0.8);
+            -webkit-backdrop-filter: blur(16px) saturate(0.8);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            z-index: 100;
+            transition: left 0.8s cubic-bezier(0.7, 0, 0.3, 1);
+        }
+        .slide-mask.active {
+            left: 0;
+        }
+
+        
+        /* ===== 毛玻璃欢迎覆盖层 (z-15) =====
+           页面加载后显示，点击进入主页后淡出 */
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 15;
+            background: rgba(8, 3, 3, 0.3);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .welcome-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .welcome-overlay.fading-out {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .welcome-overlay-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        .welcome-title {
+            font-family: 'VT323', 'Courier New', monospace;
+            font-size: clamp(52px, 8vw, 88px);
+            color: #f5e0e0;
+            letter-spacing: 6px;
+            text-shadow:
+                0 0 30px rgba(220, 80, 80, 0.5),
+                0 0 60px rgba(200, 50, 50, 0.3),
+                0 0 100px rgba(180, 30, 30, 0.2),
+                0 0 160px rgba(160, 25, 25, 0.1),
+                0 2px 4px rgba(0, 0, 0, 0.6);
+            line-height: 1.1;
+            transition: transform 0.6s ease, text-shadow 0.6s ease;
+        }
+        .welcome-overlay.visible .welcome-title {
+            animation: titleFloat 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        /* [标题浮动入场] 作用: 标题从下方 18px 处淡入上浮到原位。
+           为什么: 0.9s 的动画时间 + 从下往上的方向模拟"升起/展现"的感觉。 */
+        @keyframes titleFloat {
+            from {
+                transform: translateY(18px);
+                opacity: 0.6;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .welcome-enter-btn {
+            font-family: 'VT323', 'Courier New', 'Microsoft YaHei', monospace;
+            font-size: clamp(20px, 2.8vw, 28px);
+            letter-spacing: 5px;
+            color: #f0d8d8;
+            background: linear-gradient(135deg, rgba(100, 22, 22, 0.45) 0%, rgba(55, 10, 10, 0.55) 100%);
+            border: 2px solid rgba(200, 65, 65, 0.5);
+            border-radius: 10px;
+            padding: 15px 44px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+
+            box-shadow: 0 0 18px rgba(170, 30, 30, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4);
+            text-shadow: 0 0 8px rgba(200, 100, 100, 0.4);
+        }
+        .welcome-overlay.visible .welcome-enter-btn {
+            animation: btnReveal 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.25s forwards;
+        }
+        /* [按钮延迟入场] 作用: 按钮比标题晚 0.25s 从下方淡入。
+           为什么: 延迟制造层次感，先看标题再看到按钮，引导阅读顺序。 */
+        @keyframes btnReveal {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .welcome-enter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(220, 75, 75, 0.3), rgba(255, 200, 200, 0.12), transparent);
+            transition: left 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 0;
+        }
+        .welcome-enter-btn:hover::before {
+            left: 100%;
+        }
+        .welcome-enter-btn:hover {
+            background: linear-gradient(135deg, rgba(155, 35, 35, 0.6) 0%, rgba(80, 18, 18, 0.7) 100%);
+            border-color: rgba(235, 85, 85, 0.8);
+            box-shadow:
+                0 0 30px rgba(200, 45, 45, 0.5),
+                0 0 60px rgba(180, 30, 30, 0.25),
+                0 0 90px rgba(160, 20, 20, 0.1),
+                0 6px 20px rgba(0, 0, 0, 0.5);
+            color: #fff;
+            letter-spacing: 7px;
+            transform: translateY(-3px);
+            text-shadow: 0 0 14px rgba(255, 180, 180, 0.5);
+        }
+        .welcome-enter-btn:active {
+            transform: scale(0.94);
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 12px rgba(200, 45, 45, 0.35), inset 0 3px 6px rgba(0, 0, 0, 0.35);
+        }
+        .welcome-enter-btn span {
+            position: relative;
+            z-index: 1;
+        }
+        .welcome-subtle {
+            position: absolute;
+            bottom: 60px;
+            font-family: 'VT323', 'Courier New', monospace;
+            font-size: 13px;
+            letter-spacing: 3px;
+            color: rgba(200, 130, 130, 0.35);
+            text-align: center;
+            pointer-events: none;
+            transition: color 0.5s ease;
+        }
+        .welcome-overlay.visible .welcome-subtle {
+            animation: subtleReveal 1.2s ease 0.5s forwards;
+        }
+        /* [底部文字淡入] 作用: 欢迎覆盖层底部的 "WELCOME" 文字在 1.2s 后缓慢淡入。
+           为什么: 最后出现的元素给整个入场序列画上句号。 */
+        @keyframes subtleReveal {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        
+        /* ============================================================
+   Vue 3 全屏覆盖层系统 (z-200)
+   [作用] 滑动进入后显示的全屏 SPA 界面，包含左侧导航 + 右侧内容。
+   [怎么做] fixed 定位 z-index:200 覆盖所有元素。
+           内部使用 flex 布局：左侧 220px 固定宽度导航栏 + 右侧弹性内容区。
+           导航使用 v-for 渲染 + :class 绑定 active 状态。
+           内容区使用 <transition name="panel-fade"> 实现面板切换动画。
+   [为什么] 采用全屏覆盖而非页面跳转：
+     - 无需额外 HTTP 请求，切换即时
+     - 粒子动画和背景音乐不中断
+     - Vue 3 响应式数据驱动，UI 自动更新
+   ============================================================ */
+        .vue-overlay-root {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 200;
+            pointer-events: auto;
+            display: flex;
+            font-family: 'VT323', "Microsoft YaHei", "PingFang SC", monospace, sans-serif;
+        }
+
+        
+        .vue-overlay-enter-active {
+            transition: all 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .vue-overlay-leave-active {
+            transition: all 0.4s cubic-bezier(0.6, 0, 0.8, 1);
+        }
+        .vue-overlay-enter-from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        .vue-overlay-leave-to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        
+        /* --- Vue 主容器 ---
+   [作用] 覆盖层的实际内容容器，深色半透明背景 + 毛玻璃模糊。
+   [怎么做] 使用 g3.jpg 作为背景图叠加半透明深色渐变，
+           backdrop-filter: blur(18px) 模糊下层内容。
+   [为什么] 背景图 + 毛玻璃比纯色背景更有层次和质感，
+           18px blur 确保下层粒子动画不会干扰内容阅读。 */
+        .vue-main-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                linear-gradient(rgba(8, 3, 3, 0.72), rgba(6, 2, 2, 0.78)),
+                url('g3.jpg') center/cover no-repeat;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            display: flex;
+            flex-direction: row;
+            z-index: 1;
+        }
+
+        
+        /* --- 左侧导航栏 ---
+   [作用] 220px 宽的垂直导航，包含标题区 + 4 个导航项 + 底部分隔线 + 页脚。
+   [怎么做] flex-direction: column 垂直排列，每个导航项使用 flex 行布局。
+           激活项通过 .active 类触发：红色背景 + 红色左边框 + 发光文字。
+   [为什么] 220px 宽度经过权衡：够放下中文导航文字（4-5字），
+           又不过宽挤压右侧内容空间。固定宽度而非百分比是为了视觉稳定。 */
+        .vue-sidebar {
+            width: 220px;
+            min-width: 220px;
+            height: 100%;
+            background: rgba(18, 6, 6, 0.7);
+            border-right: 1px solid rgba(140, 40, 40, 0.4);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 0;
+            gap: 6px;
+            box-shadow: 2px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+        .vue-sidebar-header {
+            padding: 0 20px 22px 20px;
+            border-bottom: 1px solid rgba(140, 40, 40, 0.3);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .vue-sidebar-title {
+            font-size: 22px;
+            letter-spacing: 4px;
+            color: #f0d8d8;
+            text-shadow: 0 0 12px rgba(200, 60, 60, 0.4);
+        }
+        .vue-sidebar-subtitle {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: rgba(200, 130, 130, 0.5);
+            margin-top: 4px;
+        }
+        .vue-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 22px;
+            margin: 0 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            color: rgba(200, 150, 150, 0.6);
+            font-size: 15px;
+            letter-spacing: 2px;
+            position: relative;
+
+            background: transparent;
+        }
+        .vue-nav-item:hover {
+            background: rgba(100, 25, 25, 0.3);
+            border-color: rgba(180, 50, 50, 0.35);
+            color: #e8c8c8;
+            box-shadow: 0 0 10px rgba(160, 30, 30, 0.2);
+        }
+        .vue-nav-item.active {
+            background: rgba(140, 30, 30, 0.45);
+            border-color: rgba(210, 55, 55, 0.6);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(200, 45, 45, 0.35),
+                0 0 45px rgba(180, 35, 35, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .vue-nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: #e06060;
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(220, 60, 60, 0.6);
+        }
+        .vue-nav-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .vue-nav-item.active .vue-nav-dot {
+            box-shadow: 0 0 10px currentColor;
+            background: #f5c0c0;
+        }
+
+        
+        .vue-sidebar-divider {
+            margin: 8px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .vue-sidebar-divider .divider-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(140, 40, 40, 0.2);
+        }
+        .vue-sidebar-divider .divider-dot {
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            background: rgba(180, 60, 60, 0.35);
+            flex-shrink: 0;
+        }
+
+        
+        .vue-sidebar-footer {
+            margin-top: auto;
+            padding: 18px 20px 12px;
+            border-top: 1px solid rgba(140, 40, 40, 0.25);
+            text-align: center;
+        }
+        .vue-sidebar-footer .footer-dot-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .vue-sidebar-footer .footer-dot-row span {
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            background: rgba(180, 60, 60, 0.5);
+            display: inline-block;
+        }
+        .vue-sidebar-footer .footer-quote {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: rgba(200, 140, 140, 0.4);
+            line-height: 1.6;
+        }
+
+        
+        /* --- 右侧内容区 --- */
+        .vue-content-area {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .vue-content-area::before {
+            content: '';
+            position: absolute;
+            top: 16px; right: 16px;
+            width: 50px; height: 50px;
+            border-top: 1px solid rgba(180, 50, 50, 0.2);
+            border-right: 1px solid rgba(180, 50, 50, 0.2);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .vue-content-area::after {
+            content: '';
+            position: absolute;
+            bottom: 16px; left: 16px;
+            width: 50px; height: 50px;
+            border-bottom: 1px solid rgba(180, 50, 50, 0.2);
+            border-left: 1px solid rgba(180, 50, 50, 0.2);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .vue-content-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 28px;
+            border-bottom: 1px solid rgba(140, 40, 40, 0.25);
+            flex-shrink: 0;
+        }
+        .vue-content-title {
+            font-size: 20px;
+            letter-spacing: 3px;
+            color: #f0d8d8;
+            text-shadow: 0 0 8px rgba(200, 60, 60, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .vue-content-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px; height: 16px;
+            background: #c84040;
+            border-radius: 2px;
+            box-shadow: 0 0 6px rgba(200, 60, 60, 0.5);
+        }
+        .vue-close-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(80, 20, 20, 0.5);
+            border: 1.5px solid rgba(180, 50, 50, 0.5);
+            color: #f0c8c8;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+            letter-spacing: 0;
+            font-family: 'VT323', monospace;
+        }
+        .vue-close-btn:hover {
+            background: rgba(160, 35, 35, 0.7);
+            border-color: rgba(220, 65, 65, 0.7);
+            box-shadow: 0 0 24px rgba(200, 40, 40, 0.5),
+                0 0 40px rgba(180, 30, 30, 0.2);
+            color: #fff;
+            transform: scale(1.08);
+        }
+        .vue-close-btn:active {
+            transform: scale(0.9);
+            transition: transform 0.1s ease;
+        }
+        .vue-content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 32px;
+            scroll-behavior: smooth;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(180, 50, 50, 0.04) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(180, 50, 50, 0.03) 0%, transparent 50%);
+        }
+        .vue-content-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-track {
+            background: rgba(30, 10, 10, 0.4);
+            border-radius: 3px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-thumb {
+            background: rgba(140, 40, 40, 0.5);
+            border-radius: 3px;
+        }
+        .vue-content-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(180, 50, 50, 0.7);
+        }
+
+        
+        .panel-fade-enter-active,
+        .panel-fade-leave-active {
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .panel-fade-enter-from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        .panel-fade-leave-to {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        
+        /* --- 内容卡片 ---
+   [作用] 统一的毛玻璃内容卡片，用于展示各类信息块。
+   [怎么做] 暗红半透明背景 + 红色边框 + border-radius: 12px。
+           hover 时边框加亮 + 上浮 2px + 增强阴影，创造交互深度感。
+   [为什么] 统一卡片样式减少视觉噪音，用户能快速识别"这是一个信息块"。
+           hover 效果提供可交互的暗示，即使卡片本身不可点击。 */
+        .vue-card {
+            background: rgba(25, 8, 8, 0.5);
+            border: 1px solid rgba(140, 35, 35, 0.3);
+            border-radius: 12px;
+            padding: 22px 26px;
+            margin-bottom: 18px;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 14px rgba(0, 0, 0, 0.3);
+        }
+        .vue-card:hover {
+            border-color: rgba(180, 50, 50, 0.55);
+            box-shadow: 0 4px 28px rgba(140, 25, 25, 0.35),
+                0 0 30px rgba(160, 30, 30, 0.07);
+            background: rgba(30, 10, 10, 0.6);
+            transform: translateY(-2px);
+        }
+        .vue-card-title {
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: #f0d8d8;
+            margin-bottom: 8px;
+        }
+        .vue-card-desc {
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            color: rgba(200, 150, 150, 0.7);
+            line-height: 1.6;
+        }
+        .vue-tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .vue-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 14px;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            background: rgba(100, 25, 25, 0.4);
+            border: 1px solid rgba(180, 50, 50, 0.35);
+            color: #e8c0c0;
+            transition: all 0.3s ease;
+        }
+        .vue-tag:hover {
+            background: rgba(150, 35, 35, 0.5);
+            border-color: rgba(210, 60, 60, 0.55);
+            box-shadow: 0 0 12px rgba(180, 35, 35, 0.4);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .vue-highlight-num {
+            font-size: 40px;
+            letter-spacing: 2px;
+            color: #f5e0e0;
+            text-shadow: 0 0 16px rgba(220, 60, 60, 0.5);
+            line-height: 1;
+        }
+        .vue-link {
+            color: #e08080;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            letter-spacing: 1.5px;
+        }
+        .vue-link:hover {
+            color: #f5c0c0;
+            text-shadow: 0 0 10px rgba(220, 80, 80, 0.5);
+        }
+
+        /* --- 时间线条目 (用于经历/项目展示) ---
+   [作用] 左侧竖线 + 圆点的垂直时间线组件，展示教育/工作/项目经历。
+   [怎么做] border-left + ::before 圆点伪元素。
+   [为什么] 时间线是最直观的经历展示方式，用户从上到下扫描即可理解时间顺序。
+           圆点使用 box-shadow 发光增加质感，匹配主题。 */
+        .timeline-item {
+            position: relative;
+            padding-left: 20px;
+            border-left: 2px solid rgba(180, 50, 50, 0.4);
+            margin-bottom: 16px;
+        }
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #c84040;
+            box-shadow: 0 0 8px rgba(200, 60, 60, 0.6);
+        }
+        .timeline-time {
+            font-size: 12px;
+            color: var(--text-dim);
+            letter-spacing: 1.5px;
+            margin-bottom: 4px;
+        }
+        .timeline-title {
+            font-size: 15px;
+            color: #f0d8d8;
+            letter-spacing: 1.5px;
+            margin-bottom: 4px;
+        }
+        .timeline-desc {
+            font-size: 12px;
+            color: rgba(200, 150, 150, 0.7);
+            line-height: 1.5;
+            letter-spacing: 1px;
+        }
+
+        
+        /* --- 简历专属样式 ---
+   [作用] 简历页面的头部区域：姓名 + 职位 + 联系方式网格。
+   [怎么做] flex 布局，左侧姓名块 + 右侧 2 列联系方式网格。
+   [为什么] 简历头部需要在一屏内呈现姓名和关键联系信息，
+           双列网格比列表更节省垂直空间。 */
+        .resume-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .resume-name-block h2 {
+            font-size: 32px;
+            letter-spacing: 4px;
+            color: #f5e0e0;
+            margin-bottom: 6px;
+            text-shadow: 0 0 14px rgba(220, 70, 70, 0.5);
+        }
+        .resume-name-block p {
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: rgba(200, 130, 130, 0.7);
+        }
+        .resume-contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 20px;
+            font-size: 13px;
+            color: rgba(200, 150, 150, 0.75);
+            letter-spacing: 1px;
+        }
+        .resume-contact-grid span strong {
+            color: #f0d0d0;
+            font-weight: normal;
+            margin-right: 6px;
+            letter-spacing: 1.5px;
+        }
+        .resume-section-title {
+            font-size: 17px;
+            letter-spacing: 3px;
+            color: #f0d8d8;
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 3px solid #c84040;
+            text-shadow: 0 0 8px rgba(200, 60, 60, 0.4);
+        }
+        .resume-skill-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 12px;
+        }
+        .resume-skill-name {
+            width: 110px;
+            flex-shrink: 0;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            color: #e8c8c8;
+        }
+        .resume-skill-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(80, 25, 25, 0.4);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .resume-skill-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #882222, #c84040, #e06060);
+            border-radius: 3px;
+            box-shadow: 0 0 8px rgba(200, 60, 60, 0.5);
+            transition: width 1s ease;
+        }
+        .resume-skill-level {
+            width: 40px;
+            text-align: right;
+            font-size: 12px;
+            color: rgba(220, 140, 140, 0.8);
+            flex-shrink: 0;
+        }
+
+        
+        /* ===== 响应式：平板 (<=768px) =====
+   [作用] 在屏幕宽度 ≤768px 时调整布局，适配 iPad 竖屏和大型手机。
+   [怎么做] 修改 Vue sidebar 从垂直变为水平（flex-direction: row + flex-wrap），
+           缩小字体和间距，隐藏不必要的装饰元素（sidebar-header、active 竖线）。
+   [为什么] 768px 是常见的平板/手机分界点（iPad 竖屏 768px）：
+     - 垂直 sidebar 在窄屏会挤压内容区至不可用
+     - 改为水平顶部导航释放内容宽度
+     - 减小 padding/margin 增加有效显示面积
+   ============================================================ */
+        @media (max-width: 768px) {
+            .top-right-panel {
+                top: 14px;
+                right: 10px;
+                gap: 8px;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            .music-controller {
+                padding: 5px 10px;
+                gap: 7px;
+                border-radius: 20px;
+            }
+            .music-play-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 11px;
+            }
+            .volume-slider {
+                width: 48px;
+                height: 4px;
+            }
+            .volume-slider-wrap {
+                max-width: 52px;
+            }
+            .welcome-overlay-inner {
+                gap: 28px;
+                padding: 24px;
+            }
+            .welcome-title {
+                letter-spacing: 3px;
+            }
+            .welcome-enter-btn {
+                padding: 13px 32px;
+                letter-spacing: 3px;
+            }
+            .welcome-subtle {
+                bottom: 40px;
+                font-size: 11px;
+                letter-spacing: 2px;
+            }
+            .side-line {
+                right: 16px;
+            }
+            .status-bar {
+                left: 12px;
+                right: 12px;
+                font-size: 8px;
+            }
+            .logo {
+                top: 18px;
+                left: 12px;
+                font-size: 12px;
+            }
+            .welcome-area {
+                bottom: 60px;
+                left: 12px;
+            }
+            .welcome-text {
+                font-size: 20px;
+            }
+            .enter-btn {
+                padding: 9px 18px;
+                font-size: 13px;
+                letter-spacing: 2px;
+            }
+            .controls {
+                bottom: 14px;
+                right: 12px;
+                gap: 7px;
+            }
+            .control-btn {
+                width: 26px;
+                height: 26px;
+                font-size: 12px;
+            }
+            .profile-card {
+                bottom: 95px;
+                right: 40px;
+                padding: 22px 24px 20px 24px;
+                min-width: 260px;
+                max-width: 320px;
+                border-radius: 18px;
+            }
+            .profile-label {
+                font-size: 12px;
+                letter-spacing: 3px;
+            }
+            .profile-name {
+                font-size: 30px;
+                letter-spacing: 2.5px;
+            }
+            .profile-desc {
+                font-size: 12px;
+                letter-spacing: 2px;
+                margin-bottom: 12px;
+            }
+            .profile-info-label {
+                font-size: 11px;
+                letter-spacing: 3px;
+            }
+            .profile-info-value {
+                font-size: 14px;
+                letter-spacing: 1.5px;
+            }
+
+            
+            .vue-main-overlay {
+                flex-direction: column;
+            }
+            .vue-sidebar {
+                width: 100%;
+                min-width: 100%;
+                height: auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 10px 8px;
+                gap: 4px;
+                border-right: none;
+                border-bottom: 1px solid rgba(140, 40, 40, 0.4);
+                justify-content: center;
+                box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+            }
+            .vue-sidebar-header {
+                display: none;
+            }
+            .vue-nav-item {
+                padding: 8px 12px;
+                margin: 2px;
+                font-size: 12px;
+                letter-spacing: 1.5px;
+                border-radius: 6px;
+                gap: 6px;
+            }
+            .vue-nav-item.active::before {
+                display: none;
+            }
+            .vue-nav-dot {
+                width: 4px;
+                height: 4px;
+            }
+            .vue-content-topbar {
+                padding: 12px 16px;
+            }
+            .vue-content-title {
+                font-size: 16px;
+                letter-spacing: 2px;
+            }
+            .vue-close-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 13px;
+            }
+            .vue-content-scroll {
+                padding: 16px;
+            }
+            .vue-card {
+                padding: 14px 16px;
+                margin-bottom: 12px;
+            }
+            .vue-card-title {
+                font-size: 15px;
+            }
+            .vue-card-desc {
+                font-size: 11px;
+            }
+            .vue-highlight-num {
+                font-size: 28px;
+            }
+            .resume-header {
+                flex-direction: column;
+            }
+            .resume-contact-grid {
+                grid-template-columns: 1fr;
+            }
+            .resume-skill-name {
+                width: 80px;
+                font-size: 12px;
+            }
+        }
+/* ===== 响应式：手机 (<=480px) =====
+   [作用] 在屏幕宽度 ≤480px 时进一步缩小尺寸，适配手机屏幕。
+   [怎么做] 更小的字体/间距/圆角，更紧凑的卡片 padding。
+   [为什么] 480px 覆盖绝大多数手机（iPhone SE 375px → iPhone 16 Pro Max 430px）。
+           信息卡 min-width 从 350px 降至 200px 避免溢出屏幕。 */
+        @media (max-width: 480px) {
+            .top-right-panel {
+                top: 8px;
+                right: 4px;
+                gap: 5px;
+            }
+            .music-controller {
+                padding: 4px 8px;
+                gap: 4px;
+                border-radius: 16px;
+            }
+            .music-play-btn {
+                width: 24px;
+                height: 24px;
+                font-size: 9px;
+            }
+            .volume-slider {
+                width: 34px;
+                height: 3px;
+            }
+            .volume-slider-wrap {
+                max-width: 38px;
+            }
+            .volume-slider::-webkit-slider-thumb {
+                width: 12px;
+                height: 12px;
+            }
+            .welcome-enter-btn {
+                padding: 11px 24px;
+                font-size: 18px;
+                letter-spacing: 2px;
+                border-radius: 8px;
+            }
+            .profile-card {
+                bottom: 70px;
+                right: 24px;
+                padding: 16px 18px 14px 18px;
+                min-width: 200px;
+                max-width: 240px;
+                border-radius: 16px;
+            }
+            .profile-label {
+                font-size: 10px;
+                letter-spacing: 2.5px;
+            }
+            .profile-name {
+                font-size: 24px;
+                letter-spacing: 2px;
+            }
+            .profile-desc {
+                font-size: 10px;
+                letter-spacing: 1.5px;
+                margin-bottom: 10px;
+            }
+            .profile-info-label {
+                font-size: 10px;
+                letter-spacing: 2.5px;
+            }
+            .profile-info-value {
+                font-size: 12px;
+                letter-spacing: 1px;
+            }
+            .controls {
+                bottom: 10px;
+                right: 6px;
+                gap: 5px;
+            }
+            .control-btn {
+                width: 22px;
+                height: 22px;
+                font-size: 10px;
+            }
+            .status-bar {
+                left: 8px;
+                right: 8px;
+            }
+            .vue-nav-item {
+                padding: 6px 8px;
+                font-size: 10px;
+                letter-spacing: 1px;
+                border-radius: 4px;
+            }
+            .vue-content-scroll {
+                padding: 12px;
+            }
+            .vue-card {
+                padding: 10px 12px;
+                border-radius: 8px;
+            }
+            .resume-skill-name {
+                width: 70px;
+                font-size: 11px;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 10, 10, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(120, 40, 40, 0.5);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(160, 50, 50, 0.7);
+        }
+
+        
+        /* ===== 全局：文本选中色 =====
+   [作用] 自定义用户选中文本时的背景色和文字色。
+   [怎么做] ::selection 伪元素设置 background + color。
+   [为什么] 默认蓝色选中色与红色主题冲突，改为红色半透明保持视觉一致性。 */
+        ::selection {
+            background: rgba(200, 60, 60, 0.35);
+            color: #fff;
+        }
+
+        
+        /* ===== 全局：键盘焦点指示器 =====
+   [作用] 为键盘（Tab 键）导航提供可见的焦点环，满足 WCAG 无障碍标准。
+   [怎么做] :focus-visible 伪类仅在键盘导航时显示 outline，
+           鼠标点击时不显示（避免影响视觉美观）。
+   [为什么] 纯鼠标用户不需要焦点环，但键盘用户（包括视障人士）
+           依赖焦点环来定位当前操作元素。:focus-visible 兼顾两者。 */
+        button:focus-visible,
+        .vue-nav-item:focus-visible,
+        .control-btn:focus-visible,
+        .vue-close-btn:focus-visible {
+            outline: 2px solid var(--red-bright);
+            outline-offset: 2px;
+        }
+        .enter-btn:focus-visible,
+        .welcome-enter-btn:focus-visible,
+        .scroll-enter-btn:focus-visible {
+            outline: 2px solid #e06060;
+            outline-offset: 3px;
+            border-radius: 8px;
+        }
+        .music-play-btn:focus-visible {
+            outline: 2px solid var(--red-bright);
+            outline-offset: 3px;
+            border-radius: 50%;
+        }
+
+        
+        /* ===== 无障碍：减弱动效 =====
+   [作用] 尊重用户在操作系统中的"减少动态效果"设置。
+   [怎么做] 通过 prefers-reduced-motion 媒体查询检测用户偏好，
+           将所有动画时长设为 0.01ms（几乎瞬间完成），
+           隐藏粒子画布（节省前庭敏感用户的视觉负担）。
+   [为什么] 部分用户（如前庭功能障碍者）对动画敏感，
+           可能导致眩晕。这是 WCAG 2.3.3 标准要求的无障碍措施。
+           粒子动画尤其容易触发不适，因此完全隐藏。 */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            #particle-canvas { display: none; }
+        }
+
+        /* ===== 新美化：面板卡片错位入场动画 =====
+           [作用] 每个 .panel-card 卡片按 --i 自定义属性错时淡入上浮。
+           [怎么做] animation-delay 用 calc(var(--i) * 0.08s) 递增，
+                    每个卡片比前一个晚 80ms 入场。
+           [为什么] 瀑布式入场比同时出现更有层次感，80ms 间隔刚好可感知但不拖沓。 */
+        .panel-card {
+            animation: cardSlideUp 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+            animation-delay: calc(var(--i, 0) * 0.08s);
+        }
+        @keyframes cardSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 新美化：标签渐变 hover =====
+           [作用] .vue-tag hover 时背景从暗红变为亮红渐变，文字变白。 */
+        .vue-tag {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .vue-tag:hover {
+            background: linear-gradient(135deg, rgba(200, 50, 50, 0.6), rgba(160, 30, 30, 0.5));
+            border-color: rgba(230, 70, 70, 0.65);
+            box-shadow: 0 0 14px rgba(200, 45, 45, 0.5);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* ===== 新美化：技能进度条扫光动画 =====
+           [作用] 简历页技能条的填充部分有从左到右的微光扫过效果。 */
+        .resume-skill-fill {
+            position: relative;
+            overflow: hidden;
+        }
+        .resume-skill-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2.5s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0%, 100% { left: -100%; }
+            50% { left: 120%; }
+        }
+
+        /* ===== 新美化：时间线圆点脉冲 =====
+           [作用] 时间线左侧圆点带有呼吸式脉冲动画，暗示"进行中"的生命力。 */
+        .timeline-item::before {
+            animation: timelinePulse 2s ease-in-out infinite;
+        }
+        @keyframes timelinePulse {
+            0%, 100% {
+                box-shadow: 0 0 6px rgba(200, 60, 60, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 16px rgba(220, 70, 70, 0.8), 0 0 28px rgba(200, 50, 50, 0.3);
+            }
+        }
+
+    </style>
+</head>
+<body>
+<audio id="bgAudio" src="BGM1.mp3" loop preload="auto"></audio>
+
+    
+    <!-- ===== 背景层 (双图融合) =====
+   [作用] 两张背景图以对角线融合为全屏背景。
+   [怎么做] 两个 div (.bg-left / .bg-right) 分别承载左右背景图，
+           通过 CSS clip-path 实现对角线裁剪融合。
+   [为什么] 使用 div + CSS 而非 <img> 标签 + JS：
+     - CSS clip-path 是 GPU 加速的，性能更好
+     - 两个 div 绝对定位叠加，不需要 JS 计算
+     - background-image 支持 cover/position 等灵活控制
+-->
+    <div class="bg-images">
+        <div class="bg-left"></div>
+        <div class="bg-right"></div>
+    </div>
+
+    
+    <!-- ===== 粒子动画画布 =====
+   [作用] HTML5 Canvas 元素，JS 在其上绘制粒子连线动画。
+   [怎么做] <canvas> 标签创建画布，JS 通过 getContext('2d') 获取 2D 渲染上下文。
+   [为什么] Canvas 2D 而非 WebGL：80 个粒子 + 连线用 Canvas 2D 足够，
+           WebGL 虽更快但 API 复杂度高得多，此处性能远未到瓶颈。
+-->
+    <canvas id="particle-canvas"></canvas>
+
+    
+    <!-- ===== 网格纹理 ===== -->
+    <div class="grid-bg"></div>
+
+    
+    <!-- ===== 暗角遮罩 ===== -->
+    <div class="vignette"></div>
+
+    
+    <!-- ===== 固定 UI 元素 ===== -->
+    <div class="side-line overlay-active"></div>
+
+    
+    <div class="logo overlay-active">
+        <span class="dot"></span>
+        <span class="luhe">LuHe</span>
+        <span class="slash">/</span>
+        <span class="miaow">个人主页</span>
+    </div>
+
+    
+    <div class="top-right-panel overlay-active" id="topRightPanel">
+        
+        <div class="music-controller" id="musicController" title="背景音乐控制">
+            <button class="music-play-btn" id="musicPlayBtn" aria-label="播放/暂停背景音乐">
+                <span class="note-icon">♫</span>
+            </button>
+            <div class="volume-slider-wrap">
+                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="40" title="音量调节" aria-label="音量调节" />
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="welcome-area overlay-active" id="welcomeArea">
+        <div class="welcome-text">欢迎宾至，鹿禾的主页。</div>
+        <button class="enter-btn" id="enterBtn">
+            <span>详情主页→</span>
+            <span class="arrow">→</span>
+        </button>
+        <div class="enter-hint">SLIDE RIGHT TO ENTER</div>
+    </div>
+
+    
+    <div class="profile-card overlay-active" id="profileCard">
+        <div class="profile-label">PROFILE</div>
+        <div class="profile-name">LuHe</div>
+        <div class="profile-desc">在代码与想象直接，描绘未来的轮廓。</div>
+        <div class="profile-info-row">
+            <span class="profile-info-label">LOCATION</span>
+            <span class="profile-info-value">Shi Jia Zhuang</span>
+        </div>
+        <div class="profile-info-row">
+            <span class="profile-info-label">ORIENTATION</span>
+            <span class="profile-info-value">Web · AI · visual</span>
+        </div>
+    </div>
+
+    
+    <div class="status-bar overlay-active">
+        <span>SCENCE 01 · 主页面</span>
+        <div class="progress-track">
+            <div class="progress-fill"></div>
+        </div>
+    </div>
+
+    
+    <div class="controls overlay-active">
+        <div class="control-btn" title="音效">🎤</div>
+        <div class="control-btn" title="设置">⚙</div>
+    </div>
+
+    
+    <!-- ===== 毛玻璃欢迎覆盖层 ===== -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+        <div class="welcome-overlay-inner">
+            <h1 class="welcome-title">别来无恙啊</h1>
+            <button class="welcome-enter-btn" id="enterMainBtn">
+                <span>点击进入主页</span>
+            </button>
+        </div>
+        <div class="welcome-subtle">WELCOME · 鹿禾的个人主页</div>
+    </div>
+
+    
+    <!-- ===== 滑动过渡遮罩 ===== -->
+    <div class="slide-mask" id="slideMask"></div>
+
+    
+    <!-- ===== Vue 3 全屏内容区域 ===== -->
+    <div id="vue-app">
+        <transition name="vue-overlay">
+            <div v-if="visible" class="vue-overlay-root">
+                <div class="vue-main-overlay">
+                    
+                    <nav class="vue-sidebar">
+                        <div class="vue-sidebar-header">
+                            <div class="vue-sidebar-title">鹿禾·LuHe</div>
+                            <div class="vue-sidebar-subtitle">NAVIGATION</div>
+                        </div>
+                        <div v-for="tab in tabs" :key="tab.id" class="vue-nav-item" :class="{ active: currentTab === tab.id }" @click="goToTab(tab.id)" :title="tab.name">
+                            <span class="vue-nav-dot"></span>
+                            <span>{{ tab.name }}</span>
+                        </div>
+                        <div class="vue-sidebar-divider">
+                            <span class="divider-dot"></span>
+                            <span class="divider-line"></span>
+                            <span class="divider-dot"></span>
+                            <span class="divider-line"></span>
+                            <span class="divider-dot"></span>
+                        </div>
+                        <div class="vue-sidebar-footer">
+                            <div class="footer-dot-row">
+                                <span></span><span></span><span></span><span></span><span></span>
+                            </div>
+                            <div class="footer-quote">CODE · CREATE · REPEAT</div>
+                        </div>
+                    </nav>
+
+                    
+                    <div class="vue-content-area">
+                        <div class="vue-content-topbar">
+                            <span class="vue-content-title">
+                                SCENCE {{ String(currentTab).padStart(2, '0') }} · {{ currentTabData.name }}
+                            </span>
+                            <button class="vue-close-btn" @click="closeOverlay" title="关闭 · 返回主页">✕</button>
+                        </div>
+                        <div class="vue-content-scroll">
+                            <transition name="panel-fade" mode="out-in">
+                                
+                                <about-panel v-if="currentTab === 1" :key="1"></about-panel>
+
+                                
+                                <skills-panel v-if="currentTab === 2" :key="2"></skills-panel>
+
+                                
+                                <contact-panel v-if="currentTab === 3" :key="3"></contact-panel>
+
+                                
+                                <resume-panel v-if="currentTab === 4" :key="4"></resume-panel>
+
+                            </transition>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+    </div>
+
+    <!-- Vue 组件脚本（必须在 Vue CDN 之后、index.js 之前加载） -->
+    <script>
+/**
+ * AboutPanel — 场景01：关于我
+ * 个人介绍、教育背景、实习经历、项目经历、兴趣爱好、个人理念
+ */
+const AboutPanel = {
+  name: 'AboutPanel',
+  template: `
+    <div class="about-panel">
+      <div class="vue-card panel-card" style="--i:0">
+        <div class="vue-card-title">关于我</div>
+        <div class="vue-card-desc">
+          23届计算机应用技术专业专科毕业生，具备Web全栈开发、AI工具落地、视觉设计与视频剪辑复合能力。
+          有企业前端实习经验，擅长从需求到落地的完整交付，注重代码质量与交互体验的平衡，
+          始终保持技术学习热情，持续拓展能力边界。
+        </div>
+        <div class="vue-tag-row">
+          <span class="vue-tag">前端开发</span>
+          <span class="vue-tag">AI增效</span>
+          <span class="vue-tag">视觉设计</span>
+          <span class="vue-tag">视频剪辑</span>
+          <span class="vue-tag">全栈实践</span>
+        </div>
+      </div>
+
+      <div class="vue-card panel-card" style="--i:1">
+        <div class="vue-card-title">教育背景</div>
+        <div class="timeline-item">
+          <div class="timeline-time">2020 - 2023</div>
+          <div class="timeline-title">计算机应用技术 · 专科</div>
+          <div class="timeline-desc">
+            系统学习计算机基础、前端开发、Python/C++程序设计、数据库原理等课程，
+            在校期间完成多个课程项目，打下扎实的技术基础。
+          </div>
+        </div>
+      </div>
+
+      <div class="vue-card panel-card" style="--i:2">
+        <div class="vue-card-title">实习经历</div>
+        <div class="timeline-item">
+          <div class="timeline-time">苏州极豹信息科技 · 前端开发实习生</div>
+          <div class="timeline-title">负责企业官网与内部管理系统前端开发</div>
+          <div class="timeline-desc">
+            基于Vue.js完成页面组件开发与迭代，配合后端联调接口，
+            参与页面性能优化，首屏加载速度提升约30%，协助完成响应式适配与兼容性修复。
+          </div>
+        </div>
+      </div>
+
+      <div class="vue-card panel-card" style="--i:3">
+        <div class="vue-card-title">项目经历</div>
+        <div class="timeline-item">
+          <div class="timeline-time">2024.01 - 至今</div>
+          <div class="timeline-title">个人品牌主页 · 独立开发</div>
+          <div class="timeline-desc">
+            独立设计并开发响应式个人主页，融合 Canvas 粒子动画、Vue 3 动态路由、毛玻璃 UI 等交互效果，
+            完整展示个人技术栈与审美风格，作为求职与技术交流的名片。
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">2023.09 - 2023.12</div>
+          <div class="timeline-title">校园二手交易小程序 · 核心开发</div>
+          <div class="timeline-desc">
+            使用微信小程序原生框架 + 云开发，实现商品发布、搜索筛选、在线聊天、订单管理等核心功能。
+          </div>
+        </div>
+      </div>
+
+      <div class="vue-card panel-card" style="--i:4">
+        <div class="vue-card-title">兴趣爱好</div>
+        <div class="vue-tag-row">
+          <span class="vue-tag">🎮 游戏</span>
+          <span class="vue-tag">🎀 二次元</span>
+          <span class="vue-tag">🎵 音乐</span>
+          <span class="vue-tag">📷 摄影</span>
+          <span class="vue-tag">🎬 剪辑</span>
+          <span class="vue-tag">🎸 吉他</span>
+          <span class="vue-tag">☕ 咖啡</span>
+          <span class="vue-tag">🍸 鸡尾酒</span>
+          <span class="vue-tag">🌧️ 淋雨</span>
+          <span class="vue-tag">✈️ 旅游</span>
+          <span class="vue-tag">···</span>
+        </div>
+      </div>
+
+      <div class="vue-card panel-card" style="--i:5">
+        <div class="vue-card-title">个人理念</div>
+        <div class="vue-card-desc" style="font-size:16px;color:#f0d8d8;">
+          "技术是工具，创意是内核，做能解决实际问题的创造者。"
+        </div>
+      </div>
+    </div>
+  `
+};
+
+
+/**
+ * SkillsPanel — 场景02：技能领域
+ * 技能分组卡片 + 常用工具 + 正在学习 + 技能总数统计
+ */
+const SkillsPanel = {
+  name: 'SkillsPanel',
+  data() {
+    return {
+      skillGroups: [
+        {
+          category: '编码开发',
+          description: '掌握前后端核心技术栈，可独立完成Web项目从页面到接口的完整开发。',
+          skills: ['HTML5/CSS3', 'JavaScript', 'Vue 3', 'Python', 'C++', 'Bootstrap', '微信小程序', 'MySQL'],
+        },
+        {
+          category: '视觉交互',
+          description: '具备设计审美与界面落地能力，兼顾视觉质感与用户体验。',
+          skills: ['Photoshop', 'Illustrator', 'UI设计', '响应式布局', '交互动效', '用户体验优化'],
+        },
+        {
+          category: 'AI增效',
+          description: '熟练运用主流AI工具与模型提升开发创作效率，可落地自动化工作流。',
+          skills: ['AI图像生成', 'AI文案优化', '自动化脚本', '批量处理', '提示词工程', 'AI工具二次开发', 'AI Agent', 'Claude', 'Codex'],
+        },
+        {
+          category: '视频剪辑',
+          description: '可独立完成产品宣传、项目演示等场景的视频制作。',
+          skills: ['剪映专业版', '卡点剪辑', '字幕制作', '转场动效', '宣传短片', '演示视频'],
+        },
+        {
+          category: '音乐创作',
+          description: '热爱吉他演奏与音乐制作，具备编曲、录音、混音等音频创作能力。',
+          skills: ['指弹吉他', '电吉他', '编曲', '混音', '作曲', '录音'],
+        },
+      ],
+    };
+  },
+  computed: {
+    totalSkillCount() {
+      return this.skillGroups.reduce((sum, group) => sum + group.skills.length, 0);
+    },
+  },
+  template: `
+    <div class="skills-panel">
+      <div class="vue-card panel-card" v-for="(skillGroup, idx) in skillGroups" :key="skillGroup.category" :style="'--i:' + idx">
+        <div class="vue-card-title">{{ skillGroup.category }}</div>
+        <div class="vue-card-desc">{{ skillGroup.description }}</div>
+        <div class="vue-tag-row">
+          <span class="vue-tag" v-for="skill in skillGroup.skills" :key="skill">{{ skill }}</span>
+        </div>
+      </div>
+      <div class="vue-card panel-card" style="--i:5">
+        <div class="vue-card-title">常用工具</div>
+        <div class="vue-tag-row">
+          <span class="vue-tag">VS Code</span>
+          <span class="vue-tag">Git</span>
+          <span class="vue-tag">Figma</span>
+          <span class="vue-tag">Postman</span>
+          <span class="vue-tag">Claude AI</span>
+          <span class="vue-tag">ChatGPT</span>
+          <span class="vue-tag">Photoshop</span>
+          <span class="vue-tag">剪映</span>
+        </div>
+      </div>
+      <div class="vue-card panel-card" style="--i:6">
+        <div class="vue-card-title">正在学习</div>
+        <div class="vue-card-desc">
+          深入探索 TypeScript 类型系统、Next.js 全栈框架、Three.js 3D 可视化，
+          持续拓展技术视野与实战能力。
+        </div>
+        <div class="vue-tag-row">
+          <span class="vue-tag">TypeScript</span>
+          <span class="vue-tag">Next.js</span>
+          <span class="vue-tag">Three.js</span>
+        </div>
+      </div>
+      <div class="vue-card panel-card" style="text-align:center;--i:7">
+        <div class="vue-highlight-num">{{ totalSkillCount }}+</div>
+        <div class="vue-card-desc" style="margin-top:4px;">技能标签总数 · 持续学习迭代中</div>
+      </div>
+    </div>
+  `
+};
+
+
+/**
+ * ContactPanel — 场景03：联系方式
+ * 联系方式卡片 + 社交媒体 + 在线时间 + 合作说明
+ */
+const ContactPanel = {
+  name: 'ContactPanel',
+  data() {
+    return {
+      contacts: [
+        { label: '电子邮箱', value: '2743591998@qq.com', link: 'mailto:2743591998@qq.com' },
+        { label: 'GitHub', value: 'github.com/LuHeJ/index.git', link: 'https://github.com/LuHeJ/index.git' },
+        { label: '微信', value: 'xiaoyiyanyu', link: null },
+        { label: '所在城市', value: '中国 · 河北石家庄', link: null },
+      ],
+    };
+  },
+  template: `
+    <div class="contact-panel">
+      <div class="vue-card panel-card" v-for="(contact, idx) in contacts" :key="contact.label" :style="'--i:' + idx">
+        <div class="vue-card-title">{{ contact.label }}</div>
+        <div class="vue-card-desc">
+          <a v-if="contact.link" :href="contact.link" target="_blank" class="vue-link">{{ contact.value }}</a>
+          <span v-else>{{ contact.value }}</span>
+        </div>
+      </div>
+      <div class="vue-card panel-card" style="--i:4">
+        <div class="vue-card-title">社交媒体</div>
+        <div class="vue-card-desc">
+          更多动态与作品持续更新中，欢迎关注与交流。
+        </div>
+        <div class="vue-tag-row">
+          <span class="vue-tag">GitHub</span>
+          <span class="vue-tag">掘金</span>
+          <span class="vue-tag">CSDN</span>
+          <span class="vue-tag">B站</span>
+          <span class="vue-tag">抖音</span>
+        </div>
+      </div>
+      <div class="vue-card panel-card" style="--i:5">
+        <div class="vue-card-title">在线时间</div>
+        <div class="vue-card-desc">
+          工作日 19:00 - 23:00 在线<br />
+          周末全天可沟通<br />
+          紧急事务请邮件联系，24小时内回复。
+        </div>
+      </div>
+      <div class="vue-card panel-card" style="--i:6">
+        <div class="vue-card-title">合作说明</div>
+        <div class="vue-card-desc">
+          欢迎技术交流、项目合作与求职机会沟通，无论是前端开发、AI工具落地、
+          视觉设计还是视频剪辑相关的需求，都可以随时联系，我会尽快回复。
+        </div>
+      </div>
+    </div>
+  `
+};
+
+
+/**
+ * ResumePanel — 场景04：个人简历
+ * 简历头部 + 教育背景 + 工作经历 + 专业技能 + 项目经验 + 自我评价
+ */
+const ResumePanel = {
+  name: 'ResumePanel',
+  template: `
+    <div class="resume-panel">
+      <div class="vue-card panel-card" style="--i:0">
+        <div class="resume-header">
+          <div class="resume-name-block">
+            <h2>鹿禾 / LuHe</h2>
+            <p>Web前端开发 · 全栈实践 · AI增效工程师</p>
+          </div>
+          <div class="resume-contact-grid">
+            <span><strong>所在城市</strong>河北石家庄</span>
+            <span><strong>工作性质</strong>全职 / 远程</span>
+            <span><strong>电子邮箱</strong>2743591998@qq.com</span>
+            <span><strong>GitHub</strong>github.com/LuHeJ/index.git</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="vue-card panel-card" style="--i:1">
+        <div class="resume-section-title">教育背景</div>
+        <div class="timeline-item">
+          <div class="timeline-time">2020.09 - 2023.06</div>
+          <div class="timeline-title">计算机应用技术 · 专科</div>
+          <div class="timeline-desc">
+            主修课程：Web前端开发、数据结构、数据库原理、Python程序设计、C++程序设计、计算机网络、UI设计基础<br />
+            专业排名前15%，多次获得学业奖学金，完成多个课程设计与实战项目。
+          </div>
+        </div>
+      </div>
+
+      <div class="vue-card panel-card" style="--i:2">
+        <div class="resume-section-title">工作/实习经历</div>
+        <div class="timeline-item">
+          <div class="timeline-time">2023.03 - 2023.08</div>
+          <div class="timeline-title">苏州极豹信息科技有限公司 · 前端开发实习生</div>
+          <div class="timeline-desc">
+            1. 参与企业官网与内部管理系统的前端开发，基于Vue 3 + Element Plus实现20+业务组件，覆盖数据看板、表单、权限管理等模块；<br />
+            2. 配合后端完成接口联调，使用Axios封装统一请求拦截与错误处理，提升接口联调效率约25%；<br />
+            3. 负责页面响应式适配与浏览器兼容性优化，覆盖Chrome、Edge、移动端等多端，首屏加载速度提升30%；<br />
+            4. 参与代码评审与技术文档编写，协助团队建立前端组件规范。
+          </div>
+        </div>
+      </div>
+
+      <div class="vue-card panel-card" style="--i:3">
+        <div class="resume-section-title">专业技能</div>
+        <div class="resume-skill-row">
+          <div class="resume-skill-name">HTML5 / CSS3</div>
+          <div class="resume-skill-bar"><div class="resume-skill-fill" style="width: 90%;"></div></div>
+          <div class="resume-skill-level">熟练</div>
+        </div>
+        <div class="resume-skill-row">
+          <div class="resume-skill-name">JavaScript</div>
+          <div class="resume-skill-bar"><div class="resume-skill-fill" style="width: 85%;"></div></div>
+          <div class="resume-skill-level">熟练</div>
+        </div>
+        <div class="resume-skill-row">
+          <div class="resume-skill-name">Vue 3</div>
+          <div class="resume-skill-bar"><div class="resume-skill-fill" style="width: 80%;"></div></div>
+          <div class="resume-skill-level">熟练</div>
+        </div>
+        <div class="resume-skill-row">
+          <div class="resume-skill-name">Python</div>
+          <div class="resume-skill-bar"><div class="resume-skill-fill" style="width: 70%;"></div></div>
+          <div class="resume-skill-level">掌握</div>
+        </div>
+        <div class="resume-skill-row">
+          <div class="resume-skill-name">微信小程序</div>
+          <div class="resume-skill-bar"><div class="resume-skill-fill" style="width: 75%;"></div></div>
+          <div class="resume-skill-level">掌握</div>
+        </div>
+        <div class="resume-skill-row">
+          <div class="resume-skill-name">AI工具应用</div>
+          <div class="resume-skill-bar"><div class="resume-skill-fill" style="width: 85%;"></div></div>
+          <div class="resume-skill-level">熟练</div>
+        </div>
+        <div class="resume-skill-row">
+          <div class="resume-skill-name">PS / 剪映</div>
+          <div class="resume-skill-bar"><div class="resume-skill-fill" style="width: 80%;"></div></div>
+          <div class="resume-skill-level">熟练</div>
+        </div>
+      </div>
+
+      <div class="vue-card panel-card" style="--i:4">
+        <div class="resume-section-title">项目经验</div>
+        <div class="timeline-item">
+          <div class="timeline-time">2024.01 - 至今</div>
+          <div class="timeline-title">个人品牌主页 · 独立开发</div>
+          <div class="timeline-desc">
+            独立设计并开发响应式个人主页，融合 Canvas 粒子动画、Vue 3 动态路由、毛玻璃 UI 等交互效果，
+            完整展示个人技术栈与审美风格，作为求职与技术交流的名片。
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">2023.09 - 2023.12</div>
+          <div class="timeline-title">校园二手交易小程序 · 核心开发</div>
+          <div class="timeline-desc">
+            使用微信小程序原生框架 + 云开发，实现商品发布、搜索筛选、在线聊天、订单管理等核心功能。
+          </div>
+        </div>
+      </div>
+
+      <div class="vue-card panel-card" style="--i:5">
+        <div class="resume-section-title">自我评价</div>
+        <div class="vue-card-desc">
+          1. 具备扎实的Web前端开发基础，有企业实习项目经验，熟悉完整的前端开发流程与协作规范；<br />
+          2. 复合能力突出，覆盖编码开发、视觉设计、AI增效、视频剪辑四大板块，可独立完成从需求到交付的全链路工作；<br />
+          3. 学习能力强，对新技术保持高度热情，持续关注前端与AI领域的发展趋势，善于将新工具落地到实际工作中提效；<br />
+          4. 工作态度认真负责，注重代码质量与用户体验，具备良好的沟通能力与团队协作意识。
+        </div>
+      </div>
+    </div>
+  `
+};
+
+
+/**
+         * ============================================================
+         * 粒子连线动画系统 (Canvas 2D)
+         * - 80 个粒子在画布上缓慢漂移
+         * - 距离 < 150px 的粒子之间绘制半透明连线
+         * - 鼠标 120px 范围内粒子受到排斥力
+         * - 每个粒子有独立的正弦 alpha 脉动周期
+         * ============================================================
+         */
+        const canvasEl = document.getElementById('particle-canvas');
+        const ctx = canvasEl.getContext('2d');
+
+        let width, height;
+        let particles = [];
+        const particleCount = 80;
+        const connectDistance = 150;
+
+                /**
+         * 调整画布尺寸以匹配视口
+         * @returns {void}
+         */
+        function resize() {
+            width = canvasEl.width = window.innerWidth;
+            height = canvasEl.height = window.innerHeight;
+        }
+
+                /**
+         * @class Particle
+         * @description 粒子实体 — 自动漂移 + 独立正弦 alpha 脉动周期。
+         *              每个粒子有双层渲染：实心核 + 外发光晕。
+         *              reset() 用于窗口 resize 时重新随机分布位置。
+         */
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.3;
+                this.radius = Math.random() * 1.5 + 0.5;
+                this.alpha = Math.random() * 0.5 + 0.3;
+                this.pulseSpeed = Math.random() * 0.02 + 0.005;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+            }
+            update(time) {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+                this.currentAlpha = this.alpha + Math.sin(time * this.pulseSpeed + this.pulsePhase) * 0.2;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(220, 90, 90, ${this.currentAlpha})`;
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 3, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(200, 60, 60, ${this.currentAlpha * 0.15})`;
+                ctx.fill();
+            }
+        }
+
+        /**
+         * [代码作用] 初始化粒子数组 — 创建 80 个随机分布的粒子。
+         * [怎么做] 清空数组后用 for 循环 push particleCount 个新 Particle 实例。
+         * [为什么] 单独函数而非内联：
+         *   - 页面加载和窗口 resize 时都需要重新初始化
+         *   - 抽取为函数避免代码重复
+         *   - 80 个粒子是视觉密度与性能的平衡点（移动端也能跑满 60fps）
+         */
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+                /**
+         * 绘制粒子间连线 (O(n^2) 邻近检测)
+         * @description 距离 < 150px 的粒子对之间绘制半透明红色连线，
+         *              透明度随距离线性衰减
+         * @returns {void}
+         */
+        function drawConnections() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < connectDistance) {
+                        const alpha = (1 - dist / connectDistance) * 0.25;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(180, 60, 60, ${alpha})`;
+                        ctx.lineWidth = 0.8;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        let startTime = Date.now();
+
+        function animate() {
+            const time = Date.now() - startTime;
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.update(time);
+                p.draw();
+            });
+            drawConnections();
+            requestAnimationFrame(animate);
+        }
+
+        let mouseX = -1000;
+        let mouseY = -1000;
+        /**
+         * 鼠标交互 — 粒子排斥力
+         * @description 120px 半径内粒子被推离鼠标位置。
+         *              排斥力与距离成反比（越近力越大），最大力系数 0.05。
+         *              初始 mouseX/mouseY = -1000 确保页面加载时无排斥。
+         */
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            particles.forEach(p => {
+                const dx = mouseX - p.x;
+                const dy = mouseY - p.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 120) {
+                    const force = (120 - dist) / 120 * 0.05;
+                    p.vx += (dx / dist) * force;
+                    p.vy += (dy / dist) * force;
+                }
+            });
+        });
+
+        
+        /**
+         * ============================================================
+         * HTML5 Audio 音乐控制系统
+         * - 播放/暂停切换
+         * - 音量滑块双向同步 (UI -> Audio & Audio -> UI)
+         * - 按钮 UI 状态随播放状态自动更新
+         * - 首次播放需要用户交互 (浏览器自动播放策略)
+         * ============================================================
+         */
+        const bgAudio = document.getElementById('bgAudio');
+        const musicPlayBtn = document.getElementById('musicPlayBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const noteIcon = musicPlayBtn ? musicPlayBtn.querySelector('.note-icon') : null;
+
+        if (bgAudio && volumeSlider) {
+            bgAudio.volume = parseInt(volumeSlider.value) / 100;
+        }
+
+        /**
+         * 同步音乐按钮 UI 与播放状态
+         * @description piano 类触发外发光 pulse 动画 + noteBounce 图标跳动。
+         *              图标在 ♫（暂停态）和 ♪（播放态）间切换，
+         *              title 属性同步更新以提供无障碍提示。
+         */
+        function updateMusicBtnUI() {
+            if (!bgAudio || !musicPlayBtn || !noteIcon) return;
+            if (bgAudio.paused) {
+                musicPlayBtn.classList.remove('playing');
+                noteIcon.textContent = '♫';
+                musicPlayBtn.title = '播放背景音乐';
+            } else {
+                musicPlayBtn.classList.add('playing');
+                noteIcon.textContent = '♪';
+                musicPlayBtn.title = '暂停背景音乐';
+            }
+        }
+
+        if (musicPlayBtn && bgAudio) {
+            musicPlayBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (bgAudio.paused) {
+                    bgAudio.play().then(() => {
+                        updateMusicBtnUI();
+                    }).catch(err => {
+                        console.warn('音乐播放失败（可能需要用户交互）:', err.message);
+                    });
+                } else {
+                    bgAudio.pause();
+                    updateMusicBtnUI();
+                }
+            });
+        }
+
+        if (volumeSlider && bgAudio) {
+            volumeSlider.addEventListener('input', () => {
+                bgAudio.volume = parseInt(volumeSlider.value) / 100;
+            });
+            volumeSlider.addEventListener('change', () => {
+                bgAudio.volume = parseInt(volumeSlider.value) / 100;
+            });
+        }
+
+        if (bgAudio) {
+            bgAudio.addEventListener('play', updateMusicBtnUI);
+            bgAudio.addEventListener('pause', updateMusicBtnUI);
+            bgAudio.addEventListener('ended', updateMusicBtnUI);
+            bgAudio.addEventListener('volumechange', () => {
+                if (!volumeSlider) return;
+                const volPercent = Math.round(bgAudio.volume * 100);
+                if (parseInt(volumeSlider.value) !== volPercent) {
+                    volumeSlider.value = volPercent;
+                }
+            });
+        }
+
+        updateMusicBtnUI();
+
+        
+        let currentPage = 1;
+        const totalPages = 4;
+
+        function updateStatusBar(pageNum) {
+            currentPage = pageNum;
+            const statusSpan = document.querySelector('.status-bar span');
+            if (statusSpan) {
+                statusSpan.textContent = `SCENCE ${String(currentPage).padStart(2, '0')} · 主页面`;
+            }
+        }
+
+        
+        const welcomeOverlay = document.getElementById('welcomeOverlay');
+        const enterMainBtn = document.getElementById('enterMainBtn');
+        const topRightPanel = document.getElementById('topRightPanel');
+        const welcomeArea = document.getElementById('welcomeArea');
+        const logoEl = document.querySelector('.logo');
+        const statusBarEl = document.querySelector('.status-bar');
+        const controlsEl = document.querySelector('.controls');
+        const sideLineEl = document.querySelector('.side-line');
+        const profileCardEl = document.getElementById('profileCard');
+
+        /**
+         * [代码作用] allUiElements 数组收集了所有需要在欢迎覆盖层显示时
+         *            同步隐藏的固定 UI 元素。
+         * [怎么做] 将 7 个 DOM 元素引用放入数组，.filter(Boolean) 过滤掉
+         *          可能为 null 的元素（防御性编程）。
+         * [为什么] 使用数组统一管理而非逐个操作：
+         *   - 添加/移除联动元素只需修改数组
+         *   - forEach 批量操作比逐行调用简洁
+         *   - .filter(Boolean) 避免因某个元素缺失导致整体失败
+         */
+        const allUiElements = [
+            logoEl,
+            topRightPanel,
+            welcomeArea,
+            statusBarEl,
+            controlsEl,
+            sideLineEl,
+            profileCardEl
+        ].filter(Boolean);
+
+        /**
+         * 显示欢迎覆盖层 — 所有固定 UI 同步隐藏
+         * @description 三重守卫：welcomeOverlay 存在 + 未在 visible 态 + 未在 fading-out 态
+         *              overlay-active 类触发 opacity: 0 过渡（1s），与覆盖层 fade-in 同步。
+         */
+        function showWelcomeOverlay() {
+            if (
+                welcomeOverlay &&
+                !welcomeOverlay.classList.contains('visible') &&
+                !welcomeOverlay.classList.contains('fading-out')
+            ) {
+                welcomeOverlay.classList.add('visible');
+                allUiElements.forEach(el => {
+                    if (el && !el.classList.contains('overlay-active')) {
+                        el.classList.add('overlay-active');
+                    }
+                });
+            }
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(showWelcomeOverlay, 300);
+        });
+        if (document.readyState === 'complete') {
+            setTimeout(showWelcomeOverlay, 300);
+        }
+
+        if (enterMainBtn && welcomeOverlay) {
+            enterMainBtn.addEventListener('click', () => {
+                if (welcomeOverlay.classList.contains('visible')) {
+                    welcomeOverlay.classList.remove('visible');
+                    welcomeOverlay.classList.add('fading-out');
+                    allUiElements.forEach(el => {
+                        if (el) {
+                            el.classList.remove('overlay-active');
+                        }
+                    });
+                    setTimeout(() => {
+                        welcomeOverlay.classList.remove('fading-out');
+                    }, 1000);
+                    if (bgAudio) {
+                        bgAudio.play().then(() => {
+                            updateMusicBtnUI();
+                        }).catch(err => {
+                            console.warn('音乐播放失败:', err.message);
+                        });
+                    }
+                }
+            });
+        }
+
+        
+        const enterBtn = document.getElementById('enterBtn');
+        const slideMask = document.getElementById('slideMask');
+
+        let touchStartX = 0;
+        let touchDragging = false;
+
+        if (enterBtn) {
+            enterBtn.addEventListener('click', () => {
+                enterSite();
+            });
+        }
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchDragging = true;
+        });
+        document.addEventListener('touchend', (e) => {
+            if (!touchDragging) return;
+            const endX = e.changedTouches[0].clientX;
+            if (endX - touchStartX > 80) {
+                enterSite();
+            }
+            touchDragging = false;
+        });
+
+        let mouseStartX = 0;
+        let mouseDown = false;
+        document.addEventListener('mousedown', (e) => {
+            mouseStartX = e.clientX;
+            mouseDown = true;
+        });
+        document.addEventListener('mouseup', (e) => {
+            if (!mouseDown) return;
+            if (e.clientX - mouseStartX > 100) {
+                enterSite();
+            }
+            mouseDown = false;
+        });
+
+                /**
+         * 触发滑动进入动画 -> 打开 Vue 全屏区域
+         * @description 1) 激活滑动遮罩 (800ms CSS transition)
+         *              2) 动画完成后显示 Vue overlay
+         *              3) 如已可见则忽略 (幂等保护)
+         * @returns {void}
+         */
+        function enterSite() {
+            // 幂等保护：Vue 区域已可见时不重复触发
+            if (window.vueApp && window.vueApp.visible) return;
+            // 遮罩从左侧滑入（800ms CSS transition）
+            if (slideMask) slideMask.classList.add('active');
+            // Vue 立即显示于遮罩上方（z-index 200 > 100），
+            // 自身 translateX 入场动画 550ms 同步播放，消除黑屏等待
+            if (window.vueApp) {
+                window.vueApp.show();
+            }
+        }
+
+                /**
+         * 关闭 Vue 覆盖层
+         * @description 遮罩和 Vue 同时开始退出：
+         *              遮罩向右滑出（800ms），Vue 向左滑出（400ms leave），
+         *              Vue z-index 200 确保在遮罩上方消失，无黑屏间隙。
+         * @returns {void}
+         */
+        function closeVueOverlay() {
+            // 遮罩立即开始滑出（800ms CSS transition）
+            if (slideMask) slideMask.classList.remove('active');
+            // Vue 同时开始隐藏（400ms leave 动画），
+            // z-index 200 确保在遮罩上方，遮罩滑出时 Vue 已完成消失
+            if (window.vueApp && window.vueApp.visible) {
+                window.vueApp.hide();
+            }
+        }
+
+        
+        /**
+         * ============================================================
+         * 键盘快捷键映射
+         * Esc      - 关闭 Vue 覆盖层
+         * Space    - 播放/暂停音乐
+         * ArrowUp  - 音量 +5%
+         * ArrowDown - 音量 -5%
+         * ArrowRight - 下一场景
+         * ArrowLeft  - 上一场景
+         * 欢迎覆盖层可见时所有快捷键忽略
+         * ============================================================
+         */
+        document.addEventListener('keydown', (e) => {
+            if (welcomeOverlay && welcomeOverlay.classList.contains('visible')) return;
+            if (e.code === 'Escape') {
+                if (window.vueApp && window.vueApp.visible) {
+                    e.preventDefault();
+                    closeVueOverlay();
+                    return;
+                }
+            }
+            if (e.code === 'Space' && e.target === document.body && bgAudio) {
+                e.preventDefault();
+                if (bgAudio.paused) {
+                    bgAudio.play().then(updateMusicBtnUI).catch(() => {});
+                } else {
+                    bgAudio.pause();
+                    updateMusicBtnUI();
+                }
+            }
+            if (e.code === 'ArrowUp' && e.target === document.body && volumeSlider && bgAudio) {
+                e.preventDefault();
+                const newVol = Math.min(100, parseInt(volumeSlider.value) + 5);
+                volumeSlider.value = newVol;
+                bgAudio.volume = newVol / 100;
+            }
+            if (e.code === 'ArrowDown' && e.target === document.body && volumeSlider && bgAudio) {
+                e.preventDefault();
+                const newVol = Math.max(0, parseInt(volumeSlider.value) - 5);
+                volumeSlider.value = newVol;
+                bgAudio.volume = newVol / 100;
+            }
+            if (e.code === 'ArrowRight' && e.target === document.body) {
+                e.preventDefault();
+                if (window.vueApp && window.vueApp.visible && currentPage < totalPages) {
+                    const newPage = currentPage + 1;
+                    updateStatusBar(newPage);
+                    window.vueApp.goToTab(newPage);
+                }
+            }
+            if (e.code === 'ArrowLeft' && e.target === document.body) {
+                e.preventDefault();
+                if (window.vueApp && window.vueApp.visible && currentPage > 1) {
+                    const newPage = currentPage - 1;
+                    updateStatusBar(newPage);
+                    window.vueApp.goToTab(newPage);
+                }
+            }
+        });
+
+        
+        window.addEventListener('resize', () => {
+            resize();
+            initParticles();
+        });
+        resize();
+        initParticles();
+        animate();
+
+        
+        /**
+         * ============================================================
+         * Vue 3 应用 - 全屏覆盖层 SPA
+         * 4 个场景面板：关于我 / 技能领域 / 联系方式 / 个人简历
+         * 左侧导航栏 + 右侧内容区，panel-fade 过渡动画
+         * ============================================================
+         */
+        if (typeof Vue !== 'undefined') {
+            const app = Vue.createApp({
+                data() {
+                    return {
+                        visible: false,
+                        currentTab: 1,
+                        tabs: [
+                            { id: 1, name: '关于我' },
+                            { id: 2, name: '技能领域' },
+                            { id: 3, name: '联系方式' },
+                            { id: 4, name: '个人简历' },
+                        ],
+                    };
+                },
+                computed: {
+                    currentTabData() {
+                        return this.tabs.find(t => t.id === this.currentTab) || this.tabs[0];
+                    },
+                },
+                methods: {
+                    show() {
+                        this.visible = true;
+                        updateStatusBar(this.currentTab);
+                        document.body.style.overflow = 'hidden';
+                    },
+                                        /** 隐藏覆盖层 + 恢复 body 滚动 */
+                    hide() {
+                        this.visible = false;
+                        document.body.style.overflow = '';
+                    },
+                                        /** 关闭按钮处理 -> 委托给全局 closeVueOverlay() */
+                    closeOverlay() {
+                        closeVueOverlay();
+                    },
+                                        /**
+                     * 切换到指定标签页
+                     * @param {number} id - 目标标签页 ID (1-4)
+                     */
+                    goToTab(id) {
+                        this.currentTab = id;
+                        updateStatusBar(id);
+                    },
+                },
+                watch: {
+                    currentTab(newVal) {
+                        updateStatusBar(newVal);
+                    },
+                                        /** 覆盖层关闭时恢复 body 滚动 */
+                    visible(newVal) {
+                        if (!newVal) {
+                            document.body.style.overflow = '';
+                        }
+                    },
+                },
+                mounted() {
+                    console.log('🟢 Vue 3 应用已挂载');
+                },
+            });
+
+            // 注册 4 个面板组件
+            if (typeof AboutPanel   !== 'undefined') app.component('about-panel',   AboutPanel);
+            if (typeof SkillsPanel  !== 'undefined') app.component('skills-panel',  SkillsPanel);
+            if (typeof ContactPanel !== 'undefined') app.component('contact-panel', ContactPanel);
+            if (typeof ResumePanel  !== 'undefined') app.component('resume-panel',  ResumePanel);
+
+            const vueInstance = app.mount('#vue-app');
+            window.vueApp = vueInstance;
+        } else {
+            console.error('❌ Vue 3 未能加载，请检查网络或CDN地址');
+        }
+
+        // 开发诊断日志：确认全部初始化完成
+        console.log('🖤 LuHe 个人主页已就绪');
+
+    </script>
+</body>
+</html>
