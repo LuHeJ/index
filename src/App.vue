@@ -162,7 +162,7 @@
                                 <resume-panel v-else-if="currentTab === 4" />
                                 <inspire-panel v-else-if="currentTab === 5" />
                                 <tool-panel v-else-if="currentTab === 6" />
-                                <gallery-panel v-else-if="currentTab === 7" />
+                                <design-panel v-else-if="currentTab === 7" />
                         </div>
                     </div>
                 </div>
@@ -247,37 +247,37 @@ const ToolPanel = {
   </div>`
 };
 
-// ===== 新面板：画廊 =====
-const GalleryPanel = {
-  name: 'GalleryPanel',
-  template: `<div class="gallery-panel">
+// ===== 新面板：设计规范 =====
+const DesignPanel = {
+  name: 'DesignPanel',
+  template: `<div class="design-panel">
     <div class="vue-card panel-card" style="--i:0">
-      <div class="vue-card-title">渐变边框旋转</div>
-      <div class="gallery-demo-border">HOVER ME</div>
-      <div class="vue-card-desc" style="margin-top:10px">纯 CSS @keyframes 实现边框渐变色旋转，hover 触发。</div>
+      <div class="vue-card-title">色彩系统</div>
+      <div class="color-grid">
+        <div class="color-swatch" style="background:#0a0505"><span>bg-deep</span><small>#0a0505</small></div>
+        <div class="color-swatch" style="background:#882222"><span>red-dark</span><small>#882222</small></div>
+        <div class="color-swatch" style="background:#b43838"><span>red-mid</span><small>#b43838</small></div>
+        <div class="color-swatch" style="background:#c84040"><span>red-bright</span><small>#c84040</small></div>
+        <div class="color-swatch" style="background:#e08080"><span>red-light</span><small>#e08080</small></div>
+        <div class="color-swatch" style="background:#f0d8d8"><span>red-pale</span><small>#f0d8d8</small></div>
+      </div>
     </div>
     <div class="vue-card panel-card" style="--i:1">
-      <div class="vue-card-title">毛玻璃深度对比</div>
-      <div style="display:flex;gap:12px">
-        <div class="glass-demo" style="backdrop-filter:blur(4px)"><span>4px</span></div>
-        <div class="glass-demo" style="backdrop-filter:blur(12px)"><span>12px</span></div>
-        <div class="glass-demo" style="backdrop-filter:blur(24px)"><span>24px</span></div>
+      <div class="vue-card-title">字体排版</div>
+      <div class="type-sample">
+        <div class="type-row"><span class="type-label">标题</span><span class="type-demo" style="font-size:28px">VT323 28px</span></div>
+        <div class="type-row"><span class="type-label">正文</span><span class="type-demo" style="font-size:15px">VT323 15px</span></div>
+        <div class="type-row"><span class="type-label">辅助</span><span class="type-demo" style="font-size:11px">VT323 11px</span></div>
+        <div class="type-row"><span class="type-label">间距</span><span class="type-demo" style="letter-spacing:3px">letter-spacing 1.5-4px</span></div>
       </div>
-      <div class="vue-card-desc" style="margin-top:10px">backdrop-filter blur 值越大越朦胧，对比不同深度的毛玻璃效果。</div>
     </div>
     <div class="vue-card panel-card" style="--i:2">
-      <div class="vue-card-title">发光按钮</div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <button class="glow-btn glow-red">红色光</button>
-        <button class="glow-btn glow-white">白色光</button>
-        <button class="glow-btn glow-pulse">脉冲</button>
+      <div class="vue-card-title">毛玻璃层级</div>
+      <div class="glass-stack">
+        <div class="glass-layer" style="backdrop-filter:blur(6px)"><span>轻度模糊 6px</span></div>
+        <div class="glass-layer" style="backdrop-filter:blur(14px)"><span>中度模糊 14px</span></div>
+        <div class="glass-layer" style="backdrop-filter:blur(22px)"><span>重度模糊 22px</span></div>
       </div>
-      <div class="vue-card-desc" style="margin-top:10px">box-shadow 发光 + @keyframes pulse 呼吸，悬停增强。</div>
-    </div>
-    <div class="vue-card panel-card" style="--i:3">
-      <div class="vue-card-title">故障文字效果</div>
-      <div class="glitch-text" data-text="GLITCH EFFECT">GLITCH EFFECT</div>
-      <div class="vue-card-desc" style="margin-top:10px">::before / ::after 伪元素错位叠加，clip-path 裁剪实现 RGB 分离。</div>
     </div>
   </div>`
 };
@@ -288,7 +288,7 @@ const currentTab = ref(1)
 const tabs = [
   { id: 1, name: '关于我' }, { id: 2, name: '技能领域' },
   { id: 3, name: '联系方式' }, { id: 4, name: '个人简历' },
-  { id: 5, name: '灵感墙' },   { id: 6, name: '工具箱' },   { id: 7, name: '画廊' },
+  { id: 5, name: '灵感墙' },   { id: 6, name: '工具箱' },   { id: 7, name: '设计规范' },
 ]
 const currentTabData = computed(() => tabs.find(t => t.id === currentTab.value) || tabs[0])
 const panelMap = { 1: AboutPanel, 2: SkillsPanel, 3: ContactPanel, 4: ResumePanel }
